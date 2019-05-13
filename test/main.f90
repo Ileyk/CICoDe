@@ -13,8 +13,9 @@ do icl=1,Ncl_up
   call alloc_node(icl)
   call something(pcl(icl)%x)
   if (icl==7) call dealloc_node(icl)
-  
 enddo
+
+
 
 
 end program main
