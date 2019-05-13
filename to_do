@@ -1,0 +1,13 @@
+# Physics
+* compute NH
+* how to account for clump size to determine whether they are relevant?
+* full 3D, no longer theta=2pi
+* distribution of clump sizes and masses
+* non-spherical clumps
+* non-radial trajectories
+
+# Numerics
+## Software
+* check the impact of the 1% of vinf initial speed assumption
+## Hardware
+* CPU parallelization (OpenMPI or MP?) and then GPU

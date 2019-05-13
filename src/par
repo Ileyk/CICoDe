@@ -1,0 +1,39 @@
+&savelist
+  Nphases=32
+/
+
+&endlist
+  time_max=1.d0 ! in orb. periods
+/
+
+&star
+  Rstar=20.d0 ! in solar radii
+/
+
+&wind
+  beta=0.5d0
+  vinf=1.d3 ! in km/s
+  Mdot=1.E-6 ! in solar mass per year
+/
+
+&clumps
+  Ncl0          = 1000000 ! Initial # of clumps
+  clump_mass    = 1.d17 ! in CGS
+  clump_rad     = 0.1d0 ! size @ 2 stellar radii, in stellar radii
+  mass_fraction = 1.d-2 ! fraction of the total mass trapped in the clumps
+/
+
+&orbit
+  a   = 1.8d0
+  Per = 9.d0 ! in days
+/
+
+&LOS
+  inclnsn = 45.d0 ! in degrees, 90 is edge-on
+  omega_i = 0.d0 ! not defined for circular orbits
+/
+
+&numerics
+  deterministic=F
+  rlvnt_clumps =T
+/
