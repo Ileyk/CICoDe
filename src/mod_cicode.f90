@@ -22,6 +22,7 @@ call set_ini_clumps(Ncl,pos_cl,R_cl,dens_cl)
 ! Save the initial spherical coordinates of the clumps, along with their radii
 call save_histograms(Ncl,pos_cl,R_cl)
 
+! Save the initial Cartesian coordinates of the clumps, along with their radii
 call save_pos(Ncl,pos_cl,R_cl)
 
 do while (t_<time_max_)
@@ -48,17 +49,18 @@ use glbl_prmtrs
 use mod_clumps
 use mod_integration
 integer, intent(inout) :: Ncl
-double precision, intent(inout) :: pos_cl(Ncl,3), R_cl(Ncl), dens_cl(Ncl)
-double precision :: pos_cl_old(Ncl,3)
+double precision, allocatable, intent(inout) :: pos_cl(:,:), R_cl(:), dens_cl(:)
+double precision, allocatable :: pos_cl_old(:,:)
 integer :: i
 double precision :: dt_dyn, r
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 call get_dt(Ncl,pos_cl,R_cl,dt_dyn)
 
-! call add_delete_clumps(dt_dyn,Ncl,pos_cl,R_cl,dens_cl)
+call add_delete_clumps(dt_dyn,Ncl,pos_cl,R_cl,dens_cl)
 
 ! Save previous positions, to be used in expand_clumps
+allocate(pos_cl_old(Ncl,3)) ! now that clumps have been deleted / added
 pos_cl_old=pos_cl
 
 do i=1,Ncl
@@ -69,7 +71,9 @@ enddo
 
 call expand_clumps(Ncl,pos_cl_old,pos_cl,R_cl,dens_cl)
 
-! call merge_clumps(Ncl,pos_cl,R_cl)
+deallocate(pos_cl_old)
+
+if (do_merge_) call merge_clumps(Ncl,pos_cl,R_cl,dens_cl)
 
 t_ = t_ + dt_dyn
 

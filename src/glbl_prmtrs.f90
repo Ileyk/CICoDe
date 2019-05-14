@@ -24,29 +24,41 @@ double precision, parameter :: sigmaE = 6.652458734d-25 ! = sigma_thomson_scatte
 double precision, parameter :: kpE = 3.98d-1 ! 3.1d-2! = sigma_thomson / mass_proton.
 ! For kpE, we used the formula (65) of KUDRITZKI+89 w/ I_HE=2 & N_He/N_H = 0.2
 
-
 double precision :: beta_, a_, Mdot_, clump_mass_, clump_rad_
 common beta_, a_, Mdot_, clump_mass_, clump_rad_
 
-double precision :: mass_fraction_, Rstar_, vinf_, time_max_, Per_
-common mass_fraction_, Rstar_, vinf_, time_max_, Per_
+double precision :: mass_fraction_, Rstar_, vinf_, time_max_, Per_, dist_max_cl_
+common mass_fraction_, Rstar_, vinf_, time_max_, Per_, dist_max_cl_
 
-double precision :: rini_, clump_dens_, dt_, t0_, t_
-common rini_, clump_dens_, dt_, t0_, t_
+double precision :: rini_, vini_, v2strrad_
+common rini_, vini_, v2strrad_, clump_dens_
 
-integer :: Nphases_, Ncl0_
-common Nphases_, Ncl0_
+double precision :: clump_dens_, dt_, t0_, t_
+common dt_, t0_, t_
+
+double precision :: clump_rad_ini_, clump_dens_ini_
+common clump_rad_ini_, clump_dens_ini_
+
+
+double precision :: cmltd_clump_
+common cmltd_clump_
 
 character(len=400) :: prmtr_fl, err_fl, log_fl, out_fl, pos_fl, dis_fl, fldr
 common prmtr_fl, err_fl, log_fl, out_fl, pos_fl, dis_fl, fldr
+
+character(len=400) :: type_merge_, rad_evol_
+common type_merge_, rad_evol_
 
 double precision :: chrono_0
 common chrono_0
 
 character(len=8), parameter :: chrono_0_mess='chrono_0'
 
-logical :: deterministic_, rlvnt_clumps_
-common deterministic_, rlvnt_clumps_
+logical :: deterministic_, rlvnt_clumps_, do_merge_
+common deterministic_, rlvnt_clumps_, do_merge_
+
+integer :: Nphases_, Ncl0_, Ncl_max_
+common Nphases_, Ncl0_, Ncl_max_
 
 ! INTEGER, PARAMETER :: nshpe=4, nw=4
 ! INTEGER, PARAMETER :: fll_=1, eta_=fll_+1, q_=eta_+1, bet_=q_+1

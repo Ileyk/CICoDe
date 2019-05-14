@@ -35,8 +35,9 @@ subroutine read_par_files()
   use glbl_prmtrs
   integer :: Nphases, Ncl0
   double precision :: beta, a, Mdot, clump_mass, clump_rad
-  double precision :: mass_fraction, Rstar, vinf, time_max, Per
-  logical :: deterministic, rlvnt_clumps
+  double precision :: mass_fraction, Rstar, vinf, time_max, Per, dist_max_cl
+  logical :: deterministic, rlvnt_clumps, do_merge
+  character(LEN=400) :: type_merge, rad_evol
 
   integer :: unitpar=9
   logical            :: file_exists
@@ -49,7 +50,8 @@ subroutine read_par_files()
 
   namelist /wind/ beta, vinf, Mdot
 
-  namelist /clumps/ Ncl0, clump_mass, clump_rad, mass_fraction
+  namelist /clumps/ Ncl0, clump_mass, clump_rad, mass_fraction, dist_max_cl, &
+    do_merge, type_merge, rad_evol
 
   namelist /orbit/ a, Per
 
@@ -67,10 +69,14 @@ subroutine read_par_files()
   vinf = 1.d2
   Mdot = 1.d-6
 
-  Ncl0 = 1000
-  clump_mass = 1.d17
-  clump_rad = 0.01d0
+  Ncl0          = 1000
+  clump_mass    = 1.d17
+  clump_rad     = 0.01d0
   mass_fraction = 0.1d0
+  dist_max_cl   = 5.d0
+  do_merge      = .false.
+  type_merge    = undefined
+  rad_evol      = 'lorenzo'
 
   a = 1.8d0
   Per = 9.d0
@@ -113,6 +119,17 @@ subroutine read_par_files()
 
 107  close(unitpar)
 
+  ! To do also : compute a preliminary likelihood of "runaway" merger
+  ! if type_merge='volume_x_2'
+  ! CHEAT
+  if (do_merge) call crash('Not fully functional yet : are you sure?')
+
+  if (do_merge .and. (type_merge==undefined)) &
+    call crash('Which type of merger?')
+
+  if ((.not. do_merge) .and. (type_merge/=undefined)) &
+    call crash('Why did you specify a type of merger?')
+
   Nphases_=Nphases
 
   time_max_=time_max
@@ -127,6 +144,10 @@ subroutine read_par_files()
   clump_mass_    = clump_mass
   clump_rad_     = clump_rad
   mass_fraction_ = mass_fraction
+  dist_max_cl_   = dist_max_cl
+  do_merge_      = do_merge
+  type_merge_    = type_merge
+  rad_evol_      = rad_evol
 
   a_   = a
   Per_ = Per
@@ -202,6 +223,7 @@ open(unit=1,file=pos_fl,access='append')
 do i=1, Ncl
   write(1,'(200(1pe12.4))') pos_cl(i,1)*dcos(pos_cl(i,3)), pos_cl(i,1)*dsin(pos_cl(i,3)), R_cl(i)
 enddo
+write(1,'(a)') 'xxx'
 close(1)
 
 end subroutine save_pos

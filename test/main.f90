@@ -8,6 +8,8 @@ integer :: max_clumps=1000, icl
 ! Equivalent to initialize_vars in initialize_amrvac in mod_initialize.t
 allocate(pcl(max_clumps))
 
+print*, shape(pcl)
+
 ! Equivalent to initlevelone in amrini.t
 do icl=1,Ncl_up
   call alloc_node(icl)
@@ -15,7 +17,6 @@ do icl=1,Ncl_up
   if (icl==7) call dealloc_node(icl)
 enddo
 
-
-
+print*, shape(pcl)
 
 end program main

@@ -19,7 +19,7 @@ endif
 # Here, I read the compiling options
 # The user should specify the compiling mode here, and the corresponding
 # set of compiling options will be read from the file $(CICODE_DIR)/arch/
-ARCH ?= debug
+ARCH ?= default
 export ARCH
 # Include compilation rules
 include $(CICODE_DIR)/arch/$(ARCH).defs

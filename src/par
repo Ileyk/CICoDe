@@ -1,9 +1,9 @@
 &savelist
-  Nphases=32
+  Nphases=16 ! 32
 /
 
 &endlist
-  time_max=1.d0 ! in orb. periods
+  time_max=0.2d0 ! in orb. periods
 /
 
 &star
@@ -13,14 +13,18 @@
 &wind
   beta=0.5d0
   vinf=1.d3 ! in km/s
-  Mdot=1.E-6 ! in solar mass per year
+  Mdot=5.E-10 ! in solar mass per year
 /
 
 &clumps
-  Ncl0          = 1000000 ! Initial # of clumps
-  clump_mass    = 1.d17 ! in CGS
-  clump_rad     = 0.1d0 ! size @ 2 stellar radii, in stellar radii
+  Ncl0          = 0 ! 00000 ! Initial # of clumps
+  clump_mass    = 1.d18 ! in CGS
+  clump_rad     = 0.2d0 ! size @ 2 stellar radii, in stellar radii
   mass_fraction = 1.d-2 ! fraction of the total mass trapped in the clumps
+  dist_max_cl   = 10.d0 ! distance from stellar center, in stellar radii, beyond which clumps are deleted
+  do_merge      = F
+  ! type_merge    = 'volume_x_2'
+  rad_evol      = 'lorenzo'
 /
 
 &orbit
@@ -34,6 +38,6 @@
 /
 
 &numerics
-  deterministic=F
+  deterministic=T
   rlvnt_clumps =T
 /

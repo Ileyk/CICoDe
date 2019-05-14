@@ -26,6 +26,8 @@ import os
 
 import subprocess
 
+import imageio
+
 from parfile import *
 
 def circles(x, y, s, c='b', vmin=None, vmax=None, **kwargs):
@@ -126,36 +128,49 @@ plt.rc('font', **font)
 filename='../src/output/positions'
 proc = subprocess.Popen(['wc',filename], stdout=subprocess.PIPE)
 tmp = proc.communicate()
-# Nphases=1
-# Ncl = int(tmp[0].split()[0])
-# Ncl=Ncl/Nphases
+Nlines = int(tmp[0].split()[0])-2
 f=open(filename)
 tmp = f.readline() # 1st header line
 tmp = f.readline() # 2nd header line
 Nphases = int(tmp.split()[2])
-Ncl     = int(tmp.split()[3])
-print Nphases, Ncl
-x = np.zeros(Ncl)
-y = np.zeros(Ncl)
-Rcl = np.zeros(Ncl)
-fig, fig1 = plt.subplots(1,sharex=True,figsize=(1.1*figsize,figsize))
-fig1.set_xlim(-50.,50.)
-fig1.set_ylim(-50.,50.)
+# Ncl     = int(tmp.split()[3])
+# x = np.zeros(Ncl)
+# y = np.zeros(Ncl)
+# Rcl = np.zeros(Ncl)
+# for j in range(Nphases):
+# 	print j
+# 	for i in range(Ncl):
+# where the snapshot are stored before being bound together into a GIF
+images = []
 for j in range(Nphases):
-	print j
-	for i in range(Ncl):
-		tmp = f.readline()
-		x[i]  = float(tmp.split()[0])
-		y[i]  = float(tmp.split()[1])
-		Rcl[i]  = float(tmp.split()[2])
-		print i, x[i], y[i], Rcl[i]
-	# for i in range(Ncl):
-		# Rcl_in_points = np.diff(fig1.transData.transform(zip([0]*len(Rcl), Rcl)))
+    print j, '/', Nphases
+    fig, fig1 = plt.subplots(1,sharex=True,figsize=(1.1*figsize,figsize))
+    fig1.set_xlim(-10.,10.)
+    fig1.set_ylim(-10.,10.)
+    circle3 = plt.Circle((0.,0.), 1., color='b', clip_on=False)
+    fig1.add_artist(circle3)
+    for i in range(Nlines):
+        tmp = f.readline()
+        if (tmp.split()[0]=='xxx'):
+            break
+    	# x[i]  = float(tmp.split()[0])
+    	# y[i]  = float(tmp.split()[1])
+    	# Rcl[i]  = float(tmp.split()[2])
+        xx   =  float(tmp.split()[0])
+        yy   =  float(tmp.split()[1])
+        Rcll =  float(tmp.split()[2])
 
-		# circle3 = plt.Circle((x[i], y[i]), Rcl[i], color='g', clip_on=False)
-		# fig1.add_artist(circle3)
+        circles(xx,yy,Rcll,c='k',alpha=0.5, edgecolor='none')
+	# circles(x,y,Rcl,c='k',alpha=0.5, edgecolor='none')
 
-	circles(x,y,Rcl,c='k',alpha=0.5, edgecolor='none')
+    fig1.set_xlabel(r'x / stellar radius',fontweight='bold',fontsize=fontsize)
+    fig1.set_ylabel(r'y / stellar radius', fontweight='bold', fontsize=fontsize)
+    fig.tight_layout()
+    plt.savefig('pif.png',format='png',dpi=70,bbox_inches='tight') # overwrite same file each time
+    images.append(imageio.imread('pif.png')) # but before, add this file to images
+
+imageio.mimsave('pif.gif',images,duration=15./float(Nphases)) # duration per snapshot such as the whole GIF lasts 10s
+
 	# plt.colorbar()
 	# Rcl_in_points = np.diff(fig1.transData.transform(zip([0]*len(Rcl), Rcl)))
 	# fig1.scatter(x,y,c='k',s=Rcl_in_points**2/30.,marker='o',edgecolors='none')
@@ -171,13 +186,11 @@ for j in range(Nphases):
 # plt.text(0.5, 0.25, 'Isothermal Parker',fontsize=2*fontsize/3,color='k',fontweight='bold',horizontalalignment='center',verticalalignment='center',transform = fig1.transAxes)
 # plt.text(0.5, 0.15, r'C-rich, $\beta=$'+str(beta[0])+r' & v$_{inf}$/c$_s=$'+str(eta[0])+' \n => r$_s\sim$'+'{0:.2g}'.format(rs[0])+r'R$_{dust}$',fontsize=2*fontsize/3,color='b',fontweight='bold',horizontalalignment='center',verticalalignment='center',transform = fig1.transAxes)
 # plt.text(0.5, 0.05, r'O-rich, $\beta=$'+str(beta[1])+r' & v$_{inf}$/c$_s=$'+str(eta[1])+' \n => r$_s\sim$'+'{0:.2g}'.format(rs[1])+r'R$_{dust}$',fontsize=2*fontsize/3,color='r',fontweight='bold',horizontalalignment='center',verticalalignment='center',transform = fig1.transAxes)
-fig1.set_xlabel(r'x / stellar radius',fontweight='bold',fontsize=fontsize)
-fig1.set_ylabel(r'y / stellar radius', fontweight='bold', fontsize=fontsize)
 # fig1.grid(which='major', linestyle='dotted', linewidth=2, alpha=0.5)
 # fig1.grid(which='minor', linestyle='dotted', linewidth=2, alpha=0.5)
 # fig1.set_xlim(rmin,rmax)
 # fig1.set_ylim(0.,3.)
-plt.show()
-stop
+# plt.show()
+# stop
 # fig.tight_layout()
 # fig.savefig(outputs+'difference_beta_law_Parker_wind.png',bbox_inches='tight')
