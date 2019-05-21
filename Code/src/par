@@ -3,7 +3,7 @@
 /
 
 &endlist
-  time_max=0.2d0 ! in orb. periods
+  time_max=1.d0 ! in orb. periods
 /
 
 &star
@@ -13,13 +13,13 @@
 &wind
   beta=0.5d0
   vinf=1.d3 ! in km/s
-  Mdot=5.E-10 ! in solar mass per year
+  Mdot=1.E-7 ! in solar mass per year
 /
 
 &clumps
   Ncl0          = 0 ! 00000 ! Initial # of clumps
-  clump_mass    = 1.d18 ! in CGS
-  clump_rad     = 0.2d0 ! size @ 2 stellar radii, in stellar radii
+  clump_mass    = 1.d17 ! in CGS
+  clump_rad     = 0.05d0 ! size @ 2 stellar radii, in stellar radii
   mass_fraction = 1.d-2 ! fraction of the total mass trapped in the clumps
   dist_max_cl   = 10.d0 ! distance from stellar center, in stellar radii, beyond which clumps are deleted
   do_merge      = F
@@ -28,7 +28,7 @@
 /
 
 &orbit
-  a   = 1.8d0
+  a   = 1.8d0 ! in stellar radii units
   Per = 9.d0 ! in days
 /
 
