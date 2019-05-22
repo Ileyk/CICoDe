@@ -46,6 +46,9 @@ clump_dens_=3.d0*clump_mass_/(4.d0*dpi*clump_rad_**3.d0)
 ! set as where v_beta = 1% of terminal wind speed
 vini_=0.01d0
 rini_=1.d0/(1.d0-vini_**(1.d0/beta_))
+! if (rini_>1.05d0) &
+if ((rini_-1.d0)/(dist_max_cl_-1.d0)>0.05d0) &
+  call crash('Beware, rini too far from stellar surface, risky! Beta too high?')
 
 if (dabs(rini_-1.d0)<1.d-12) call crash("Velocity profile suspiciously steep, beware")
 

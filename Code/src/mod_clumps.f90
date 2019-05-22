@@ -401,9 +401,15 @@ double precision :: Dt ! dx, ddx, ddt, x, q, v
 ! the distance between the stellar surface and dist_max_cl_
 call num_int_steps(100000,'one_over_v',1.d0,dist_max_cl_,Dt,'log')
 
+! Beware, int of a very large double produces a negative integer...
+! hence the if condition on the product and not on Ncl_max_
 Ncl_max_ = int ( Ndot_ * Dt )
 
-write (string, "(I11)") Ncl_max_
+if (Ndot_ * Dt < 1.d9) then
+  write (string, "(I10)") Ncl_max_
+else
+  call crash('More than a billion clumps... are you sure you want to proceed?')
+endif
 
 call followup("The # of clumps estimated in the simulation space is ~ "//trim(string))
 
