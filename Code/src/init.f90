@@ -36,6 +36,9 @@ Rstar_ = Rstar_ / Rstar_
 vinf_  = vinf_  / vinf_
 Mdot_  = Mdot_  / Mdot_
 
+! # of clumps flowing through any sphere per unit time
+Ndot_ = mass_fraction_ * Mdot_ / clump_mass_
+
 ! Assuming spherical clumps
 clump_dens_=3.d0*clump_mass_/(4.d0*dpi*clump_rad_**3.d0)
 
@@ -43,6 +46,8 @@ clump_dens_=3.d0*clump_mass_/(4.d0*dpi*clump_rad_**3.d0)
 ! set as where v_beta = 1% of terminal wind speed
 vini_=0.01d0
 rini_=1.d0/(1.d0-vini_**(1.d0/beta_))
+
+if (dabs(rini_-1.d0)<1.d-12) call crash("Velocity profile suspiciously steep, beware")
 
 ! Speed @ 2 stellar radii, the reference position for clump_rad and clump_dens
 call get_v(2.d0,v2strrad)
@@ -73,8 +78,8 @@ end subroutine initialization
 
 
 ! -----------------------------------------------------------------------------------
-! Pick up clumps @ random in angles (th,ph) but also in r, such as conservation of
-! # of clumps ie nvr2=cst w/ n # density of clumps.
+! Pick up clumps @ random in angles (th,ph) and pick up r
+! such as conservation of # of clumps ie nvr2=cst w/ n # density of clumps.
 ! -----------------------------------------------------------------------------------
 subroutine set_ini_clumps(Ncl,pos_cl,R_cl,dens_cl)
 use glbl_prmtrs
@@ -82,6 +87,7 @@ use mod_clumps
 use rdm
 use mod_geometry
 use mod_wind
+use mod_func
 integer, intent(in) :: Ncl
 double precision, intent(inout) :: pos_cl(Ncl,3), R_cl(Ncl), dens_cl(Ncl)
 logical :: rlvnt=.true.
@@ -91,11 +97,10 @@ logical :: rlvnt=.true.
 ! CHEAT
 ! call add_clumps(Ncl,Ncl,pos_cl,R_cl,dens_cl)
 integer :: i
-double precision :: r, th, ph
+double precision :: th, ph
 double precision :: r1, v1
-! speed @ 2 stellar radii, the reference point @ which
-! clump_rad and clump_dens are given
-double precision :: v2strrad
+
+double precision :: r(Ncl)
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 do i=1,Ncl
@@ -113,18 +118,9 @@ do i=1,Ncl
   pos_cl(i,3)=ph
 enddo
 
-! CHEAT For now, we simply pick up r @ random between rini & 10. ...
-! But overwrites the radial distances to stellar center
-! call set_ini_radii(Ncl,pos_cl,R_cl,dens_cl)
-call get_v(2.d0,v2strrad)
-do i=1,Ncl
-  call get_flat(rini_,10.d0,r)
-  pos_cl(i,1)=r
-  call get_v(r,v1)
-  R_cl(i)=clump_rad_*(r/2.d0)**(2.d0/3.d0)*(v1/v2strrad)**(1.d0/3.d0)
-  dens_cl(i)=clump_dens_ / ((r/2.d0)**2.d0*(v1/v2strrad))
-  ! write(7,*), r
-enddo
+r=pos_cl(:,1)
+call accptnce_rjctnce(Ncl,r,R_cl,dens_cl)
+pos_cl(:,1)=r
 
 end subroutine set_ini_clumps
 ! -----------------------------------------------------------------------------------

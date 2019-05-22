@@ -36,6 +36,9 @@ common rini_, vini_, v2strrad_, clump_dens_
 double precision :: clump_dens_, dt_, t0_, t_
 common dt_, t0_, t_
 
+double precision :: Ndot_
+common Ndot_
+
 double precision :: clump_rad_ini_, clump_dens_ini_
 common clump_rad_ini_, clump_dens_ini_
 

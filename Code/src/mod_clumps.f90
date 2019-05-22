@@ -71,8 +71,8 @@ enddo
 ! dNcl_m=count(deleted .eqv. .true.)
 
 ! ! # of clumps to add
-cmltd_clump_ = cmltd_clump_ + dt_dyn * (mass_fraction_*Mdot_) / clump_mass_
-dNcl_p = int ( cmltd_clump_ + dt_dyn * (mass_fraction_*Mdot_) / clump_mass_ )
+cmltd_clump_ = cmltd_clump_ + dt_dyn * Ndot_
+dNcl_p = int ( cmltd_clump_ )
 cmltd_clump_ = cmltd_clump_ - dble(int(cmltd_clump_))
 if (cmltd_clump_>1.d0 .or. cmltd_clump_<0.d0) call crash('cmltd_clump_ can not be > 1 or < 0')
 
@@ -149,6 +149,9 @@ integer :: i
 double precision :: th, ph
 logical :: rlvnt=.true.
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+! Nothing to do
+if (dNcl==0) return
 
 ! Store previous arrays...
 pos_cl_tmp=pos_cl
@@ -389,16 +392,26 @@ end subroutine set_ini_radii
 subroutine get_clump_number
 use miscellaneous
 use glbl_prmtrs
+use rdm
 character(LEN=11) :: string
+double precision :: Dt ! dx, ddx, ddt, x, q, v
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Ncl_max_ = int ( ( mass_fraction_ * Mdot_ / clump_mass_ ) * ( dist_max_cl_ - 1.d0 ) )
+! Numerical integration to evaluate Dt, the time required to cross
+! the distance between the stellar surface and dist_max_cl_
+call num_int_steps(100000,'one_over_v',1.d0,dist_max_cl_,Dt,'log')
+
+Ncl_max_ = int ( Ndot_ * Dt )
 
 write (string, "(I11)") Ncl_max_
 
-call followup("The # of clumps estimated in the simulation space is > ~ "//trim(string))
+call followup("The # of clumps estimated in the simulation space is ~ "//trim(string))
 
-Ncl_max_ = 10 * Ncl_max_
+Ncl0_ = Ncl_max_
+
+! Ncl_max_ = 10 * Ncl_max_
+
+! if (Ncl_max_>Ncl_pointer_) call crash("Pointer on object 'clumps' too small to contain all the clumps")
 
 end subroutine get_clump_number
 ! -----------------------------------------------------------------------------------

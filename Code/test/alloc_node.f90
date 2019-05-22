@@ -5,7 +5,7 @@ integer, intent(in) :: icl
 !-----------------------------------------------------------------------------
 if(.not. allocated(pcl(icl)%x)) then
   ! allocate arrays for clumps
-  call alloc_state(pcl(icl),Ncl_up)
+  call alloc_state(pcl(icl))
 endif
 
 pcl(icl)%x=0.d0
@@ -15,10 +15,9 @@ end subroutine alloc_node
 !=============================================================================
 
 !=============================================================================
-subroutine alloc_state(s,Ncl)
+subroutine alloc_state(s)
 use mod_physicaldata
 type(clump) :: s
-integer, intent(in) :: Ncl
 !-----------------------------------------------------------------------------
 
 allocate(s%x(3))
@@ -48,6 +47,8 @@ type(clump) :: s
 !-----------------------------------------------------------------------------
 
 deallocate(s%x)
+! deallocate(s%rad)
+! deallocate(s%rho)
 
 end subroutine dealloc_state
 !=============================================================================

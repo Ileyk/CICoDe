@@ -33,7 +33,7 @@ subroutine read_par_files()
   use miscellaneous
   ! use draw ! to determine position of L1
   use glbl_prmtrs
-  integer :: Nphases, Ncl0
+  integer :: Nphases
   double precision :: beta, a, Mdot, clump_mass, clump_rad
   double precision :: mass_fraction, Rstar, vinf, time_max, Per, dist_max_cl
   logical :: deterministic, rlvnt_clumps, do_merge
@@ -50,7 +50,7 @@ subroutine read_par_files()
 
   namelist /wind/ beta, vinf, Mdot
 
-  namelist /clumps/ Ncl0, clump_mass, clump_rad, mass_fraction, dist_max_cl, &
+  namelist /clumps/ clump_mass, clump_rad, mass_fraction, dist_max_cl, &
     do_merge, type_merge, rad_evol
 
   namelist /orbit/ a, Per
@@ -69,7 +69,7 @@ subroutine read_par_files()
   vinf = 1.d2
   Mdot = 1.d-6
 
-  Ncl0          = 1000
+  ! Ncl0          = 1000 ! DEPRECIATED
   clump_mass    = 1.d17
   clump_rad     = 0.01d0
   mass_fraction = 0.1d0
@@ -119,6 +119,12 @@ subroutine read_par_files()
 
 107  close(unitpar)
 
+  ! DEPRECIATED : now, Ncl0 is computed based on Ndot_ and the time to cross the distance
+  ! between rini_ and dist_max_cl_.
+  ! Ncl0=0 => dt_dyn ini too big => spurious "shell of clumps" being sent @ the beginning
+  ! (OK once they leave the simulation space)
+  ! if (Ncl0==0) call crash('Possible but beware, the first dt_dyn is meaningless.')
+
   ! To do also : compute a preliminary likelihood of "runaway" merger
   ! if type_merge='volume_x_2'
   ! CHEAT
@@ -140,7 +146,7 @@ subroutine read_par_files()
   vinf_=vinf
   Mdot_=Mdot
 
-  Ncl0_          = Ncl0
+  ! Ncl0_          = Ncl0
   clump_mass_    = clump_mass
   clump_rad_     = clump_rad
   mass_fraction_ = mass_fraction
@@ -216,7 +222,7 @@ INQUIRE(FILE=pos_fl, EXIST=file_exists)
 if (.not. file_exists) then
   open(unit=1,file=pos_fl)
   write(1,'(a)') 'x | y | R'
-  write(1,'((a),(2I12))') 'Nphases Nclumps0 ', Nphases_, Ncl0_
+  write(1,'((a),(2I12))') 'Nphases ', Nphases_
   close(1)
 endif
 open(unit=1,file=pos_fl,access='append')

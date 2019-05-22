@@ -72,6 +72,8 @@ call add_delete_clumps(dt_dyn,Ncl,pos_cl,R_cl,dens_cl)
 allocate(pos_cl_old(Ncl,3)) ! now that clumps have been deleted / added
 pos_cl_old=pos_cl
 
+print*, Ncl
+
 do i=1,Ncl
   r=pos_cl(i,1)
   call rk4(r,dt_dyn)

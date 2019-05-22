@@ -2,7 +2,7 @@ module mod_physicaldata
    implicit none
    save
 
-   integer :: Ncl_up=10
+   integer :: Ncl_up=10000000
 
    type clump
       !> ID of a clump

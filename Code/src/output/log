@@ -1,5 +1,5 @@
- The # of clumps estimated in the simulation space is > ~       79414
- It took     0.0 sec since beginnin                                                                                                                                                                      
- It took     0.0 sec since (initial                                                                                                                                                                      
- It took   105.9 sec since (integra                                                                                                                                                                      
- It took   105.9 sec since beginnin                                                                                                                                                                      
+ The # of clumps estimated in the simulation space is ~         794
+ It took     0.0 sec since beginning (initialization)                                                                                                                                                    
+ It took     0.0 sec since (initialization of clumps)                                                                                                                                                    
+ It took     0.4 sec since (integration)                                                                                                                                                                 
+ It took     0.5 sec since beginning                                                                                                                                                                     

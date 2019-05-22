@@ -132,7 +132,7 @@ Nlines = int(tmp[0].split()[0])-2
 f=open(filename)
 tmp = f.readline() # 1st header line
 tmp = f.readline() # 2nd header line
-Nphases = int(tmp.split()[2])
+Nphases = 1 # int(tmp.split()[2])
 # Ncl     = int(tmp.split()[3])
 # x = np.zeros(Ncl)
 # y = np.zeros(Ncl)
@@ -148,7 +148,15 @@ for j in range(Nphases):
     fig1.set_xlim(-10.,10.)
     fig1.set_ylim(-10.,10.)
     circle3 = plt.Circle((0.,0.), 1., color='b', clip_on=False)
+    circle4 = plt.Circle((0.,0.), 7., color='r', clip_on=False, fill=False)
+    circle5 = plt.Circle((0.,0.), 8., color='g', clip_on=False, fill=False)
+    circle6 = plt.Circle((0.,0.), 9., color='c', clip_on=False, fill=False)
+    circle7 = plt.Circle((0.,0.), 10., color='y', clip_on=False, fill=False)
     fig1.add_artist(circle3)
+    fig1.add_artist(circle4)
+    fig1.add_artist(circle5)
+    fig1.add_artist(circle6)
+    fig1.add_artist(circle7)
     for i in range(Nlines):
         tmp = f.readline()
         if (tmp.split()[0]=='xxx'):

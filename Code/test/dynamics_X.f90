@@ -11,6 +11,7 @@ integer :: i, j
 
 do i=1,3
   x(i)=dble(i)
+  ! print*, i, x(i)
 enddo
 
 ! print*, 'shape at the end of something :', shape(pos)

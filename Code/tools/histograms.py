@@ -76,7 +76,7 @@ Nbins=50 # Ncl/10000
 
 fig, fig1 = plt.subplots(1,sharex=True,figsize=(1.1*figsize,figsize))
 
-n, bins, patches = fig1.hist(ph,Nbins,density=1)
+n, bins, patches = fig1.hist(r,Nbins,density=1)
 
 
 

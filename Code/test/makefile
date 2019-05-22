@@ -10,7 +10,7 @@
 
 # Beware the order of the objects! The most fundamental first and the main last
 # It sounds like the order should be the same as when we compile directly.
-objects = glbl_prmtrs.o miscellaneous.o mod_kracken.o IO.o mod_wind.o rdm.o mod_clumps.o mod_geometry.o init.o integration.o mod_cicode.o main.o
+objects = mod_physicaldata.o alloc_node.o dynamics_X.o main.o
 
 ifndef CICODE_DIR
 $(error CICODE_DIR is not set)
@@ -24,7 +24,7 @@ export ARCH
 # Include compilation rules
 include $(CICODE_DIR)/arch/$(ARCH).defs
 
-cicode: $(objects)
+main : $(objects)
 	$(F90) $(F90FLAGS) -o $@ $^
 %.mod:%.90 %.o
 	$(F90) $(F90FLAGS) -c -o $@ $^
