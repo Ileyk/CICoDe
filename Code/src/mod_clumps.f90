@@ -180,8 +180,7 @@ do i=Ncl-dNcl+1,Ncl
   !   if (.not. rlvnt) PICK UP NEW TH AND PH
   ! endif
   call get_flat(0.d0,2.d0*dpi,ph)
-  ! CHEAT to debug
-  pos_cl(i,2)=dpi/2.d0 ! dacos(th)
+  pos_cl(i,2)=dacos(th)
   pos_cl(i,3)=ph
   R_cl(i)=clump_rad_ini_
   dens_cl(i)=clump_dens_ini_
@@ -402,20 +401,18 @@ double precision :: Dt ! dx, ddx, ddt, x, q, v
 call num_int_steps(100000,'one_over_v',1.d0,dist_max_cl_,Dt,'log')
 
 ! Beware, int of a very large double produces a negative integer...
-! hence the if condition on the product and not on Ncl_max_
-Ncl_max_ = int ( Ndot_ * Dt )
+! hence the if condition on the product and not on Ncl0_
+Ncl0_ = int ( Ndot_ * Dt )
 
 if (Ndot_ * Dt < 1.d9) then
-  write (string, "(I10)") Ncl_max_
+  write (string, "(I10)") Ncl0_
 else
   call crash('More than a billion clumps... are you sure you want to proceed?')
 endif
 
 call followup("The # of clumps estimated in the simulation space is ~ "//trim(string))
 
-Ncl0_ = Ncl_max_
-
-! Ncl_max_ = 10 * Ncl_max_
+! Ncl_max_ = 10 * Ncl0_
 
 ! if (Ncl_max_>Ncl_pointer_) call crash("Pointer on object 'clumps' too small to contain all the clumps")
 

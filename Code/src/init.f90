@@ -11,9 +11,11 @@ use rdm
 use miscellaneous
 use mod_clumps
 use mod_wind
+use IO
 ! speed @ 2 stellar radii, the reference point @ which
 ! clump_rad and clump_dens are given
 double precision :: v2strrad
+character(LEN=20) :: string
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 ! Dimension
@@ -24,13 +26,10 @@ clump_mass_ = clump_mass_ / (Mdot_*Rstar_/vinf_)
 
 Per_=Per_*secinday/(Rstar_/vinf_) ! orbital period in code units
 a_  =a_*Rstar_    /Rstar_
+NSspin_=NSspin_/(Rstar_/vinf_)
 
 ! if (time_max_/=1.d0) call crash('Pas certain encore que ça puisse se faire ça...')
 time_max_=time_max_*Per_
-
-! CHEAT
-! dt_=Per_/dble(Nphases_)
-dt_ = time_max_/dble(Nphases_)
 
 Rstar_ = Rstar_ / Rstar_
 vinf_  = vinf_  / vinf_
@@ -72,9 +71,33 @@ if (.not. deterministic_) call init_random_seed
 ! Preliminary estimate of the # of clumps in the simulation space
 call get_clump_number
 
+! Estimate of the # of phase bins required to have a time bin dt ~ to
+! the NS spin period
+Nphases_ = int(Per_/NSspin_)
+! We take the closest (superior) multiple of 100
+! so as we can save snapshots every N dt
+Nphases_ =  Nphases_ + Nsave_ - ( Nphases_ - Nsave_*int(dble(Nphases_)/dble(Nsave_)) )
+! We save ~ 100 snapshots per orbit for plotting the clumps and X-ray source
+! positions and the instantaneous column density
+! dNph_sv_ = Nphases_ / 100
+write(string,"(I10)") int(Per_/NSspin_)
+call followup("The # of phase bins required is ~ "//trim(string))
+dt_ = time_max_/dble(Nphases_)
+
+! Deduce the radial profile of the mean distance between the clumps
+! and save it, along with the radial profile of the clumps radii
+call save_prsty_prfle
+
 ! It is where we store the fraction of clumps, to make sure we do not have
 ! to add a # of clumps > 1 @ each dynamical time scale
 cmltd_clump_=0.d0
+
+! Save index set to zero
+if (restart_indx_<0) then
+  save_index_=0
+else
+  save_index_=restart_indx_+1
+endif
 
 end subroutine initialization
 ! -----------------------------------------------------------------------------------
@@ -116,8 +139,7 @@ do i=1,Ncl
   endif
   call get_flat(0.d0,2.d0*dpi,ph)
   ! write(7,*), th, ph
-  ! CHEAT to debug
-  pos_cl(i,2)=dpi/2.d0 ! dacos(th)
+  pos_cl(i,2)=dacos(th)
   pos_cl(i,3)=ph
 enddo
 

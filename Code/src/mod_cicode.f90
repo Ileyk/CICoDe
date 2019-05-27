@@ -7,6 +7,7 @@ use glbl_prmtrs
 use mod_init
 use IO
 use miscellaneous
+use mod_NH
 integer :: Ncl
 double precision, allocatable :: pos_cl(:,:), R_cl(:), dens_cl(:)
 integer :: i
@@ -14,19 +15,33 @@ integer :: i
 
 call cpu_time(chrono_2)
 
-t0_=0.d0
-t_=t0_
-Ncl=Ncl0_
+if (restart_indx_<0) then ! if no restart
 
-allocate(pos_cl(Ncl,3),R_cl(Ncl),dens_cl(Ncl))
+  t0_=0.d0
+  t_=t0_
+  Ncl=Ncl0_
 
-call set_ini_clumps(Ncl,pos_cl,R_cl,dens_cl)
+  allocate(pos_cl(Ncl,3),R_cl(Ncl),dens_cl(Ncl))
 
-! Save the initial spherical coordinates of the clumps, along with their radii
-call save_histograms(Ncl,pos_cl,R_cl)
+  call set_ini_clumps(Ncl,pos_cl,R_cl,dens_cl)
 
-! Save the initial Cartesian coordinates of the clumps, along with their radii
-call save_pos(Ncl,pos_cl,R_cl)
+  ! Save the initial spherical coordinates of the clumps, along with their radii
+  call save_histograms(Ncl,pos_cl,R_cl)
+
+  ! Save the initial Cartesian coordinates of the clumps, along with their radii
+  call save_pos(Ncl,pos_cl,R_cl,dens_cl)
+
+  ! Compute the first NH, in initial position
+  call compute_NH(Ncl,pos_cl,R_cl,dens_cl)
+
+else
+
+  ! Read time & # of clumps from positions file "restart_indx_"
+  call load_clumps(Ncl,pos_cl,R_cl,dens_cl)
+
+  t_=t0_
+
+endif
 
 call chrono(chrono_2,chrono_2_mess)
 
@@ -36,10 +51,12 @@ do while (t_<time_max_)
 
   call advance(Ncl,pos_cl,R_cl,dens_cl)
 
-  ! CHEAT to debug
   if (t_==t0_+dt_) then
-    call save_pos(Ncl,pos_cl,R_cl)
-    ! call compute_NH
+    call compute_NH(Ncl,pos_cl,R_cl,dens_cl)
+    ! Is it time to save positions and instantaneous NH?
+    if (int((t_+smalldble)/dt_)/(Nphases_/Nsave_)/=int((t_-smalldble)/dt_)/(Nphases_/Nsave_)) then
+      call save_pos(Ncl,pos_cl,R_cl,dens_cl)
+    endif
     t0_=t0_+dt_
   endif
 
@@ -72,7 +89,7 @@ call add_delete_clumps(dt_dyn,Ncl,pos_cl,R_cl,dens_cl)
 allocate(pos_cl_old(Ncl,3)) ! now that clumps have been deleted / added
 pos_cl_old=pos_cl
 
-print*, Ncl
+! print*, Ncl
 
 do i=1,Ncl
   r=pos_cl(i,1)

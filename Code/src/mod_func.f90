@@ -17,7 +17,7 @@ function one_over_vr2 (x)
 double precision :: one_over_vr2
 double precision, intent (in) :: x
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-one_over_vr2 = 1.d0 / (x**2.d0*v_wind(x)) ! x**3.d0-x**2.d0-5.d0*x+3.d0 ! 8.0 * x
+one_over_vr2 = 1.d0 / (x**2.d0*v_wind(x))
 return
 end function one_over_vr2
 ! -----------------------------------------------------------------------------------
@@ -83,5 +83,30 @@ jon_rho = clump_dens_ / (x/2.d0)**3.d0
 return
 end function jon_rho
 ! -----------------------------------------------------------------------------------
+
+! -----------------------------------------------------------------------------------
+! Gives the radial profile of the number density of the clumps
+! -----------------------------------------------------------------------------------
+function clump_nbr_dens (x)
+double precision :: clump_nbr_dens
+double precision, intent (in) :: x
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+clump_nbr_dens = Ndot_ / (4.d0*dpi*x**2.d0*v_wind(x))
+return
+end function clump_nbr_dens
+! -----------------------------------------------------------------------------------
+
+! -----------------------------------------------------------------------------------
+! Gives the radial profile of the mean distance between the clumps centers
+! -----------------------------------------------------------------------------------
+function mean_dist (x)
+double precision :: mean_dist
+double precision, intent (in) :: x
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+mean_dist = clump_nbr_dens(x)**(-1.d0/3.d0)
+return
+end function mean_dist
+! -----------------------------------------------------------------------------------
+
 
 end module mod_func

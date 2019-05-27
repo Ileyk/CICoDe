@@ -143,12 +143,10 @@ Nphases = int(tmp.split()[1])
 # where the snapshot are stored before being bound together into a GIF
 images = []
 for j in range(Nphases):
-    print j, '/', Nphases
+    print j+1, '/', Nphases
     fig, fig1 = plt.subplots(1,sharex=True,figsize=(1.1*figsize,figsize))
     fig1.set_xlim(-10.,10.)
     fig1.set_ylim(-10.,10.)
-    circle3 = plt.Circle((0.,0.), 1., color='b', clip_on=False)
-    fig1.add_artist(circle3)
     for i in range(Nlines):
         tmp = f.readline()
         if (tmp.split()[0]=='xxx'):
@@ -158,15 +156,17 @@ for j in range(Nphases):
     	# Rcl[i]  = float(tmp.split()[2])
         xx   =  float(tmp.split()[0])
         yy   =  float(tmp.split()[1])
-        Rcll =  float(tmp.split()[2])
+        Rcll =  float(tmp.split()[3])
 
         circles(xx,yy,Rcll,c='k',alpha=0.5, edgecolor='none')
 	# circles(x,y,Rcl,c='k',alpha=0.5, edgecolor='none')
-
+    circle3 = plt.Circle((0.,0.), 1., color='b', clip_on=False, alpha=0.5)
+    fig1.add_artist(circle3)
     fig1.set_xlabel(r'x / stellar radius',fontweight='bold',fontsize=fontsize)
     fig1.set_ylabel(r'y / stellar radius', fontweight='bold', fontsize=fontsize)
     fig.tight_layout()
-    plt.savefig('pif.png',format='png',dpi=70,bbox_inches='tight') # overwrite same file each time
+    plt.savefig('pif.png',format='png',dpi=140,bbox_inches='tight') # overwrite same file each time
+    # plt.show()
     images.append(imageio.imread('pif.png')) # but before, add this file to images
 
 imageio.mimsave('pif.gif',images,duration=15./float(Nphases)) # duration per snapshot such as the whole GIF lasts 10s

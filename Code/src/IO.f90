@@ -33,16 +33,16 @@ subroutine read_par_files()
   use miscellaneous
   ! use draw ! to determine position of L1
   use glbl_prmtrs
-  integer :: Nphases
+  integer :: Nsave, restart_indx
   double precision :: beta, a, Mdot, clump_mass, clump_rad
-  double precision :: mass_fraction, Rstar, vinf, time_max, Per, dist_max_cl
+  double precision :: mass_fraction, Rstar, vinf, time_max, Per, dist_max_cl, NSspin
   logical :: deterministic, rlvnt_clumps, do_merge
   character(LEN=400) :: type_merge, rad_evol
 
   integer :: unitpar=9
   logical            :: file_exists
 
-  namelist /savelist/ Nphases
+  namelist /savelist/ Nsave, restart_indx
 
   namelist /endlist/ time_max
 
@@ -53,13 +53,14 @@ subroutine read_par_files()
   namelist /clumps/ clump_mass, clump_rad, mass_fraction, dist_max_cl, &
     do_merge, type_merge, rad_evol
 
-  namelist /orbit/ a, Per
+  namelist /orbit/ a, Per, NSspin
 
   namelist /numerics/ deterministic, rlvnt_clumps
 
   open(3,file=trim(err_fl))
 
-  Nphases = 32
+  Nsave = 32
+  restart_indx = -1 ! by default, no restart
 
   time_max = 1.d0
 
@@ -80,6 +81,7 @@ subroutine read_par_files()
 
   a = 1.8d0
   Per = 9.d0
+  NSspin = 300.d0
 
   deterministic = .true.
   rlvnt_clumps  = .false.
@@ -136,7 +138,10 @@ subroutine read_par_files()
   if ((.not. do_merge) .and. (type_merge/=undefined)) &
     call crash('Why did you specify a type of merger?')
 
-  Nphases_=Nphases
+  if (Nsave>9999) call crash('Too many saved files')
+
+  Nsave_=Nsave
+  restart_indx_=restart_indx
 
   time_max_=time_max
 
@@ -155,8 +160,9 @@ subroutine read_par_files()
   type_merge_    = type_merge
   rad_evol_      = rad_evol
 
-  a_   = a
-  Per_ = Per
+  a_      = a
+  Per_    = Per
+  NSspin_ = NSspin
 
   deterministic_=deterministic
   rlvnt_clumps_ =rlvnt_clumps
@@ -176,6 +182,9 @@ fldr='./output/'
 ! ! fldrs
 pos_fl=trim(fldr)//'positions'
 dis_fl=trim(fldr)//'initial_distributions'
+prsty_fl=trim(fldr)//'porosity'
+NH_fl=trim(fldr)//'NH'
+posX_fl=trim(fldr)//'posX'
 
 log_fl=trim(fldr)//'log'
 ! scale_file=trim(fldr)//'scale'
@@ -197,42 +206,156 @@ err_fl=trim(fldr)//'err'
 ! the updated version of out, directuly used in dimensionizing.f90 in vualatv
 ! dim_file =trim(fldr)//'dim'  ! where you store the dimensioned computed quantities (but still in (GM2,roche1,L) units)
 
-! Since lines are appended in log_file each time (see in miscellaneous.f90),
-! we need to erase the previous one first
-call system("rm -f "//log_fl)
-! et tant qu a faire...
-call system("rm -f "//err_fl)
-call system("rm -f "//pos_fl)
-call system("rm -f "//dis_fl)
+if (restart_indx_<0) then
+  ! Since lines are appended in log_file each time (see in miscellaneous.f90),
+  ! we need to erase the previous one first
+  call system("rm -f "//log_fl)
+  ! et tant qu a faire...
+  call system("rm -f "//err_fl)
+  call system("rm -f "//pos_fl)
+  call system("rm -f "//dis_fl)
+  call system("rm -f "//prsty_fl)
+  call system("rm -f "//NH_fl)
+  call system("rm -f "//posX_fl)
+endif
 
 end subroutine give_filenames
 ! -----------------------------------------------------------------------------------
 
-
 ! -----------------------------------------------------------------------------------
-subroutine save_pos(Ncl,pos_cl,R_cl)
+! Save the radial profile of clump radius and mean distance between centers.
+! Deduce the profile of the distance between clump shells compared to clump radii.
+! -----------------------------------------------------------------------------------
+subroutine save_prsty_prfle
 use glbl_prmtrs
-integer, intent(in) :: Ncl
-double precision, intent(in) :: pos_cl(Ncl,3), R_cl(Ncl)
-integer :: i
+use mod_func
+integer :: i, Nstep=1000
+double precision :: x, dx, q, xmin, xmax
 logical :: file_exists
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-INQUIRE(FILE=pos_fl, EXIST=file_exists)
+INQUIRE(FILE=prsty_fl, EXIST=file_exists)
 if (.not. file_exists) then
-  open(unit=1,file=pos_fl)
-  write(1,'(a)') 'x | y | R'
-  write(1,'((a),(2I12))') 'Nphases ', Nphases_
+  open(unit=1,file=prsty_fl)
+  write(1,'(a)') 'r | d (mean dist.) | Rcl | d/Rcl - 2'
   close(1)
 endif
-open(unit=1,file=pos_fl,access='append')
-do i=1, Ncl
-  write(1,'(200(1pe12.4))') pos_cl(i,1)*dcos(pos_cl(i,3)), pos_cl(i,1)*dsin(pos_cl(i,3)), R_cl(i)
+
+open(unit=1,file=prsty_fl,access='append')
+
+xmin=rini_
+xmax=dist_max_cl_
+! Stretching factor
+q   = (xmax/xmin)**(1.d0/dble(Nstep))
+dx  = xmin * (q-1.d0)
+x   = xmin + dx/2.d0 ! centers still half-way in-between the edges (reverse not true)
+do i=1,Nstep
+  select case(rad_evol_)
+  case('lorenzo')
+    write(1,'(200(1pe12.4))') x, mean_dist(x), lorenzo_rad(x), mean_dist(x)/lorenzo_rad(x) - 2.d0
+  case('jon')
+    write(1,'(200(1pe12.4))') x, mean_dist(x), jon_rad(x), mean_dist(x)/jon_rad(x) - 2.d0
+  end select
+  x  =  x * q
+  dx = dx * q
 enddo
-write(1,'(a)') 'xxx'
+
 close(1)
 
+end subroutine save_prsty_prfle
+! -----------------------------------------------------------------------------------
+
+! -----------------------------------------------------------------------------------
+subroutine save_pos(Ncl,pos_cl,R_cl,dens_cl)
+use glbl_prmtrs
+integer, intent(in) :: Ncl
+double precision, intent(in) :: pos_cl(Ncl,3), R_cl(Ncl), dens_cl(Ncl)
+integer :: i
+logical :: file_exists
+character(LEN=80) :: filename
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+write(filename,'(I4.4)') save_index_
+filename = trim(pos_fl) // '_' // trim(filename) // '.dat'
+
+! Write header
+! Save time & # of clumps for restart
+open(unit=1,file=trim(filename))
+write(1,'(a)') 'x | y | z | R | rho'
+write(1,'((d20.14),(I10))') t_, Ncl
+close(1)
+
+! INQUIRE(FILE=pos_fl, EXIST=file_exists)
+! if (.not. file_exists) then
+!   open(unit=1,file=pos_fl)
+!   write(1,'(a)') 'x | y | z | R'
+!   write(1,'((a),(2I12))') 'Nsave ', Nsave_
+!   close(1)
+! endif
+
+! Write data
+! Save Cartesian coordinates of clumps
+open(unit=1,file=trim(filename),access='append')
+do i=1, Ncl
+  write(1,'(200(1pe12.4))') pos_cl(i,1)*dsin(pos_cl(i,2))*dcos(pos_cl(i,3)), &
+                            pos_cl(i,1)*dsin(pos_cl(i,2))*dsin(pos_cl(i,3)), &
+                            pos_cl(i,1)*dcos(pos_cl(i,2)), R_cl(i), dens_cl(i)
+enddo
+close(1)
+
+save_index_ = save_index_ + 1
+
 end subroutine save_pos
+! -----------------------------------------------------------------------------------
+
+! -----------------------------------------------------------------------------------
+! If it is a restart, we load the positions, radii and densities of the clumps
+! from the data file. 3 reasons why there is a drift of the result which end up
+! being quite different with and without restart :
+!   - float in saved and loaded file /= double precision
+!   - even if random seed is the same (ie deterministic=T), not the same pick up
+!   - cmltd_clump_ is not saved, we start again from cmltd_clump_ = 0
+! -----------------------------------------------------------------------------------
+subroutine load_clumps(Ncl,pos_cl,R_cl,dens_cl)
+use glbl_prmtrs
+use mod_cart_sph
+use miscellaneous
+integer, intent(out) :: Ncl
+double precision, allocatable, intent(out) :: pos_cl(:,:), R_cl(:), dens_cl(:)
+integer :: i
+logical :: file_exists
+double precision :: x(1:3), r(1:3)
+character(LEN=80) :: filename
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+write(filename,'(I4.4)') restart_indx_
+filename = trim(pos_fl) // '_' // trim(filename) // '.dat'
+
+INQUIRE(FILE=filename, EXIST=file_exists)
+if (.not. file_exists) then
+  call crash('File '//trim(filename)//' does not exist, no restart from it possible.')
+endif
+
+! Read time & # of clumps from header
+! Save time & # of clumps for restart
+open(unit=1,file=trim(filename))
+read(1,*)
+read(1,'((d20.14),(I10))') t0_, Ncl
+
+allocate(pos_cl(Ncl,3), R_cl(Ncl), dens_cl(Ncl))
+
+! Read data
+! Save Cartesian coordinates of clumps
+do i=1, Ncl
+  read(1,'(200(1pe12.4))') x(1), x(2), x(3), R_cl(i), dens_cl(i)
+  call cart_to_sph(x)
+  pos_cl(i,1)=x(1)
+  pos_cl(i,2)=x(2)
+  pos_cl(i,3)=x(3)
+enddo
+close(1)
+
+end subroutine load_clumps
 ! -----------------------------------------------------------------------------------
 
 ! -----------------------------------------------------------------------------------
@@ -259,6 +382,96 @@ close(2)
 
 end subroutine save_histograms
 ! -----------------------------------------------------------------------------------
+
+! -----------------------------------------------------------------------------------
+subroutine save_NH(NH)
+use glbl_prmtrs
+double precision, intent(in) :: NH(Nphases_)
+integer :: i, j, line_restart
+logical :: file_exists
+character(LEN=480) :: string, command
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+! INQUIRE(FILE=NH_fl, EXIST=file_exists)
+! if (.not. file_exists) then
+!   open(unit=1,file=NH_fl)
+!   write(1,'(a)') 't | NH(ph1) | NH(ph2) | ... '
+!   close(1)
+! endif
+
+! In case of restart, delete all the lines beyond the appropriate index
+! If restart AND first time save_NH is called
+if (restart_indx_>0 .and. dabs( t_ - dt_*(restart_indx_*(Nphases_/Nsave_)+1) ) < smalldble) then
+  ! 1. Look for the line of restart
+  ! a. ... to do so, grep the index just after restart and save the result in a tmp file
+  write(string,'(I8.8)') restart_indx_*(Nphases_/Nsave_)+1
+  ! write(string,'(I1.1)') 7
+  print*, trim(string)
+  command = "grep -rni " // trim(string) // " output/NH > output/tmp"
+  ! command = "grep -rni " // trim(string) // " test > output/tmp"
+  call system(command)
+  print*, trim(command)
+  ! b. read the result in the tmp file
+  open(1,file='output/tmp')
+  read(1,'(a)') string
+  close(1)
+  ! c. extract the appropriate line number, line_restart
+  print*, trim(string)
+  i=index(string,':') ! separators of grep to delimit the line number
+  j=index(string,':',back=.true.)
+  read(string(i+1:j-1),'(I8.8)') line_restart
+  print*, i, j
+  print*, line_restart, string(i+1:j-1)
+  ! d. remove all lines after (and including) line_restart
+  write(string,'(I8.8)') line_restart
+  command="sed -i '' '"//trim(string)//",$d' "//trim(NH_fl)
+  ! command="sed -i '' '"//trim(string)//",$d' test"
+  print*, trim(command)
+  call system(command)
+  ! write(1,*) 'pif'
+  ! remove the tmp file
+  call system("rm output/tmp")
+  ! print*,
+  ! print*, dt_*restart_indx_*(Nphases_/Nsave_)
+
+endif
+
+open(unit=1,file=NH_fl,access='append')
+
+write(1,'(a,1pe12.4,a,I8.8,a,I8.8)') 'time ', t_, ' | phase bin ', int((t_+smalldble)/dt_), ' in ', Nphases_ !, (NH(i),i=1,Nphases_)
+do i=1, Nphases_
+  write(1,'(200(1pe12.4))') NH(i)
+enddo
+write(1,*) ' '
+
+close(1)
+
+end subroutine save_NH
+! -----------------------------------------------------------------------------------
+
+! -----------------------------------------------------------------------------------
+subroutine save_pos_X(pos_X)
+use glbl_prmtrs
+double precision, intent(in) :: pos_X(3)
+integer :: i
+logical :: file_exists
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+INQUIRE(FILE=posX_fl, EXIST=file_exists)
+if (.not. file_exists) then
+  open(unit=1,file=posX_fl)
+  write(1,'(a)') 't | x | y | z '
+  close(1)
+endif
+open(unit=1,file=posX_fl,access='append')
+
+write(1,'(200(1pe12.4))') t_, (pos_X(i),i=1,3)
+
+close(1)
+
+end subroutine save_pos_X
+! -----------------------------------------------------------------------------------
+
 
 
 ! -----------------------------------------------------------------------------------

@@ -36,8 +36,8 @@ common rini_, vini_, v2strrad_, clump_dens_
 double precision :: clump_dens_, dt_, t0_, t_
 common dt_, t0_, t_
 
-double precision :: Ndot_
-common Ndot_
+double precision :: Ndot_, NSspin_
+common Ndot_, NSspin_
 
 double precision :: clump_rad_ini_, clump_dens_ini_
 common clump_rad_ini_, clump_dens_ini_
@@ -46,8 +46,10 @@ common clump_rad_ini_, clump_dens_ini_
 double precision :: cmltd_clump_
 common cmltd_clump_
 
-character(len=400) :: prmtr_fl, err_fl, log_fl, out_fl, pos_fl, dis_fl, fldr
-common prmtr_fl, err_fl, log_fl, out_fl, pos_fl, dis_fl, fldr
+character(len=400) :: prmtr_fl, err_fl, log_fl, out_fl, pos_fl, dis_fl, &
+  prsty_fl, NH_fl, posX_fl, fldr
+common prmtr_fl, err_fl, log_fl, out_fl, pos_fl, dis_fl, &
+  prsty_fl, NH_fl, posX_fl, fldr
 
 character(len=400) :: type_merge_, rad_evol_
 common type_merge_, rad_evol_
@@ -58,15 +60,15 @@ common chrono_0, chrono_1, chrono_2, chrono_3, chrono_4
 character(len=80), parameter :: chrono_0_mess='beginning', &
   chrono_1_mess='beginning (initialization)', &
   chrono_2_mess='(initialization of clumps)', &
-  chrono_3_mess='(integration)', &
+  chrono_3_mess='(integration & save)', &
   chrono_4_mess='beginning (initialization)'
 
 
 logical :: deterministic_, rlvnt_clumps_, do_merge_
 common deterministic_, rlvnt_clumps_, do_merge_
 
-integer :: Nphases_, Ncl0_, Ncl_max_
-common Nphases_, Ncl0_, Ncl_max_
+integer :: Nphases_, Ncl0_, Nsave_, save_index_, restart_indx_
+common Nphases_, Ncl0_, Nsave_, save_index_, restart_indx_
 
 ! INTEGER, PARAMETER :: nshpe=4, nw=4
 ! INTEGER, PARAMETER :: fll_=1, eta_=fll_+1, q_=eta_+1, bet_=q_+1
