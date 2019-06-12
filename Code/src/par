@@ -14,7 +14,7 @@
 &wind
   beta=0.5d0
   vinf=1.d3 ! in km/s
-  Mdot=1.E-10 ! in solar mass per year
+  Mdot=1.E-6 ! in solar mass per year
 /
 
 &clumps

@@ -8,6 +8,7 @@ use mod_init
 use IO
 use miscellaneous
 use mod_NH
+use mod_clumps
 integer :: Ncl
 double precision, allocatable :: pos_cl(:,:), R_cl(:), dens_cl(:)
 integer :: i
@@ -26,14 +27,20 @@ if (restart_indx_<0) then ! if no restart
 
   call set_ini_clumps(Ncl,pos_cl,R_cl,dens_cl)
 
+  ! delete immediately the unappropriate (ie never on LOS) clumps
+  ! (but since is_init=.true., do not add any clump)
+  call add_delete_clumps(0.d0,Ncl,pos_cl,R_cl,dens_cl,.true.)
+print*, 'clean'
   ! Save the initial spherical coordinates of the clumps, along with their radii
   call save_histograms(Ncl,pos_cl,R_cl)
-
+print*, 'saved 1'
   ! Save the initial Cartesian coordinates of the clumps, along with their radii
   call save_pos(Ncl,pos_cl,R_cl,dens_cl)
+print*, 'saved 2'
 
   ! Compute the first NH, in initial position
   call compute_NH(Ncl,pos_cl,R_cl,dens_cl)
+print*, 'saved 3'
 
 else
 
@@ -53,7 +60,7 @@ print*, 'Initialization over - - - - - - - - - -'
 call cpu_time(chrono_3)
 
 do while (t_<time_max_)
-
+print*, maxval(pos_cl(:,1)), Ncl
   call advance(Ncl,pos_cl,R_cl,dens_cl)
 
   if (t_==t0_+dt_) then
@@ -89,7 +96,7 @@ double precision :: dt_dyn, r
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 call get_dt(Ncl,pos_cl,R_cl,dt_dyn)
-print*, 'kikou'
+
 call add_delete_clumps(dt_dyn,Ncl,pos_cl,R_cl,dens_cl)
 
 ! Save previous positions, to be used in expand_clumps

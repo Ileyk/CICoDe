@@ -158,7 +158,6 @@ use mod_wind
 use mod_func
 integer, intent(inout) :: Ncl
 double precision, intent(inout) :: pos_cl(Ncl,3), R_cl(Ncl), dens_cl(Ncl)
-! double precision, allocatable, intent(inout) :: pos_cl(:,:), R_cl(:), dens_cl(:)
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 ! Add all the Ncl clumps
@@ -170,8 +169,6 @@ double precision :: r1, v1
 
 double precision :: r(Ncl)
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-! allocate(pos_cl(Ncl,3),R_cl(Ncl),dens_cl(Ncl))
 
 do i=1,Ncl
   ! Pick up @ random angular position (over dphi and d(cos(th)) )
@@ -185,10 +182,6 @@ enddo
 r=pos_cl(:,1)
 call accptnce_rjctnce(Ncl,r,R_cl,dens_cl)
 pos_cl(:,1)=r
-
-! delete the unappropriate clumps (but since is_init=.true.,
-! do not add any)
-! call add_delete_clumps(0.d0,Ncl,pos_cl,R_cl,dens_cl,.true.)
 
 end subroutine set_ini_clumps
 ! -----------------------------------------------------------------------------------

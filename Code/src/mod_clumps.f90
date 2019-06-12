@@ -63,6 +63,7 @@ logical, allocatable :: deleted(:), is_init_value
 ! # of clumps to delete
 ! dNcl_m=count(deleted .eqv. .true.)
 
+
 ! New total # of clumps
 ! Ncl=Ncl+dNcl_p
 if (.not. present(is_init)) then ! by default, if not present, not initialization
@@ -75,7 +76,6 @@ if (.not. present(is_init)) then ! by default, if not present, not initializatio
 endif
 
 allocate(deleted(Ncl))
-print*, maxval(pos_cl(:,1)), maxval(pos_cl(:,2)), maxval(pos_cl(:,3))
 
 call get_to_delete(Ncl,pos_cl,R_cl,deleted)
 
@@ -117,7 +117,6 @@ deallocate(pos_cl,R_cl,dens_cl)
 Ncl=Ncl-dNcl
 ! ... and reallocating them w/ the new size
 allocate(pos_cl(Ncl,3),R_cl(Ncl),dens_cl(Ncl))
-print*, maxval(pos_cl_tmp(:,1))
 
 j=1
 do i=1,Ncl+dNcl
@@ -128,8 +127,7 @@ do i=1,Ncl+dNcl
     j=j+1
   endif
 enddo
-print*, maxval(pos_cl(:,1)), maxval(pos_cl(:,2)), maxval(pos_cl(:,3)), dNcl
-stop
+
 if (j/=Ncl+1) call crash("Problem w/ the # of clumps being deleted")
 
 end subroutine delete_clumps
@@ -241,16 +239,12 @@ deleted=.false.
 
 ! Who should we delete?
 call sph_2_cart(Ncl,pos_cl,pos_cl_cart)
-print*, minval(pos_cl_cart(:,1)), maxval(pos_cl_cart(:,1))
-print*, minval(pos_cl_cart(:,2)), maxval(pos_cl_cart(:,2))
-print*, minval(pos_cl_cart(:,3)), maxval(pos_cl_cart(:,3))
 do i=1,Ncl
   ! Those which get further than the maximal distance
   if (pos_cl(i,1)>dist_max_cl_) then
     deleted(i)=.true.
   ! Those which go "behind" the superior conjunction of the X-ray source
-  ! elseif (pos_cl(i,1)*dcos(pos_cl(i,2))<-a_) then
-  elseif (pos_cl_cart(i,3)<-a_) then
+  elseif (pos_cl(i,1)*dcos(pos_cl(i,2))<-a_) then
     deleted(i)=.true.
   ! Those which are out of
   ! the projected circle of radius
