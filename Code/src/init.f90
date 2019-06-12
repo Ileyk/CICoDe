@@ -12,11 +12,19 @@ use miscellaneous
 use mod_clumps
 use mod_wind
 use IO
+use mod_dynamics_X
+use mod_func
 ! speed @ 2 stellar radii, the reference point @ which
 ! clump_rad and clump_dens are given
 double precision :: v2strrad
 character(LEN=20) :: string
+double precision :: phase, pos_X(1:3)
+integer :: i
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+! Remove all previous outputs (if not a restart) BEFORE producing
+! any output
+if (restart_indx_<0) call clean_outputs
 
 ! Dimension
 Rstar_ = Rstar_ * rsolar ! cm
@@ -71,6 +79,10 @@ if (.not. deterministic_) call init_random_seed
 ! Preliminary estimate of the # of clumps in the simulation space
 call get_clump_number
 
+! Compute the fraction < 1 of clumps to be plotted such as we have always ~
+! the same fraction of "dark" in the output image produced by positions_3D.py
+call get_clumps_nbr_to_be_plotted
+
 ! Estimate of the # of phase bins required to have a time bin dt ~ to
 ! the NS spin period
 Nphases_ = int(Per_/NSspin_)
@@ -79,9 +91,11 @@ Nphases_ = int(Per_/NSspin_)
 Nphases_ =  Nphases_ + Nsave_ - ( Nphases_ - Nsave_*int(dble(Nphases_)/dble(Nsave_)) )
 ! We save ~ 100 snapshots per orbit for plotting the clumps and X-ray source
 ! positions and the instantaneous column density
-! dNph_sv_ = Nphases_ / 100
-write(string,"(I10)") int(Per_/NSspin_)
-call followup("The # of phase bins required is ~ "//trim(string))
+write(string,"(I10)") Nphases_
+call followup("The # of phase bins required is "//trim(string))
+write(string,"(I10)") Nsave_
+call followup("Among them, we save only "//trim(string))
+call followup(" ")
 dt_ = time_max_/dble(Nphases_)
 
 ! Deduce the radial profile of the mean distance between the clumps
@@ -99,6 +113,34 @@ else
   save_index_=restart_indx_+1
 endif
 
+! Save X-ray source orbit for plotting
+call save_orbit
+
+! Compute xmin_prjctd, xmax_", ymin_" & ymax_", the projected edges
+! of the rectangle containing the orbit, and add
+! the radius of a clump @ this distance
+phase=0.d0
+prjctd_apstrn_=0.d0
+xmax_prjctd_=0.d0
+xmin_prjctd_=0.d0
+ymax_prjctd_=0.d0
+ymin_prjctd_=0.d0
+do i=1,1000
+  call get_pos_X(phase,pos_X)
+  xmax_prjctd_ = max(xmax_prjctd_,pos_X(1))
+  xmin_prjctd_ = min(xmin_prjctd_,pos_X(1))
+  ymax_prjctd_ = max(ymax_prjctd_,pos_X(2))
+  ymin_prjctd_ = min(ymin_prjctd_,pos_X(2))
+  prjctd_apstrn_ = max(prjctd_apstrn_,dsqrt(pos_X(1)**2.d0+pos_X(2)**2.d0))
+  phase=phase+2.d0*dpi/1000.d0
+enddo
+! To make sure the clumps no longer touch the orbit
+if (rad_evol_=='lorenzo') then
+  R_cl_apstrn_=lorenzo_rad(prjctd_apstrn_)
+elseif (rad_evol_=='jon') then
+  R_cl_apstrn_=jon_rad(prjctd_apstrn_)
+endif
+
 end subroutine initialization
 ! -----------------------------------------------------------------------------------
 
@@ -114,9 +156,9 @@ use rdm
 use mod_geometry
 use mod_wind
 use mod_func
-integer, intent(in) :: Ncl
+integer, intent(inout) :: Ncl
 double precision, intent(inout) :: pos_cl(Ncl,3), R_cl(Ncl), dens_cl(Ncl)
-logical :: rlvnt=.true.
+! double precision, allocatable, intent(inout) :: pos_cl(:,:), R_cl(:), dens_cl(:)
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 ! Add all the Ncl clumps
@@ -129,14 +171,11 @@ double precision :: r1, v1
 double precision :: r(Ncl)
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+! allocate(pos_cl(Ncl,3),R_cl(Ncl),dens_cl(Ncl))
+
 do i=1,Ncl
   ! Pick up @ random angular position (over dphi and d(cos(th)) )
   call get_flat(-1.d0,1.d0,th)
-  if (rlvnt_clumps_) then
-    call is_relevant(th,rlvnt)
-    ! CHEAT
-    ! if (.not. rlvnt) PICK UP NEW TH AND PH
-  endif
   call get_flat(0.d0,2.d0*dpi,ph)
   ! write(7,*), th, ph
   pos_cl(i,2)=dacos(th)
@@ -146,6 +185,10 @@ enddo
 r=pos_cl(:,1)
 call accptnce_rjctnce(Ncl,r,R_cl,dens_cl)
 pos_cl(:,1)=r
+
+! delete the unappropriate clumps (but since is_init=.true.,
+! do not add any)
+! call add_delete_clumps(0.d0,Ncl,pos_cl,R_cl,dens_cl,.true.)
 
 end subroutine set_ini_clumps
 ! -----------------------------------------------------------------------------------

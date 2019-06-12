@@ -10,7 +10,7 @@
 
 # Beware the order of the objects! The most fundamental first and the main last
 # It sounds like the order should be the same as when we compile directly.
-objects = glbl_prmtrs.o mod_func.o miscellaneous.o mod_cart_sph.o mod_kracken.o IO.o mod_wind.o rdm.o mod_dynamics_X.o mod_NH.o mod_clumps.o mod_geometry.o init.o integration.o mod_cicode.o main.o
+objects = glbl_prmtrs.o miscellaneous.o mod_func.o mod_cart_sph.o mod_kracken.o mod_dynamics_X.o IO.o mod_wind.o rdm.o mod_NH.o mod_clumps.o mod_geometry.o init.o integration.o mod_cicode.o main.o
 
 ifndef CICODE_DIR
 $(error CICODE_DIR is not set)

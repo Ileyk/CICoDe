@@ -42,46 +42,46 @@ end subroutine get_dt
 ! Notice that when clumps are added, we first give a chance to the flow to advance
 ! before computing who merged with who.
 ! -----------------------------------------------------------------------------------
-subroutine add_delete_clumps(dt_dyn,Ncl,pos_cl,R_cl,dens_cl)
+subroutine add_delete_clumps(dt_dyn,Ncl,pos_cl,R_cl,dens_cl,is_init)
 use glbl_prmtrs
 use rdm
 use miscellaneous
 use mod_wind
+use mod_cart_sph
 double precision, intent(in) :: dt_dyn
 integer, intent(inout) :: Ncl
 double precision, allocatable, intent(inout) :: pos_cl(:,:), R_cl(:), dens_cl(:)
+logical, intent(in), optional :: is_init
 ! # of clumps added and deleted respectively
 integer :: dNcl_p, dNcl_m
 integer :: i
 double precision :: pos_cl_tmp(Ncl,3), R_cl_tmp(Ncl), dens_cl_tmp(Ncl)
 double precision :: th, ph
-logical :: deleted(Ncl)
+logical, allocatable :: deleted(:), is_init_value
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-deleted=.false.
-
-! Who should we delete?
-do i=1,Ncl
-  if (pos_cl(i,1)>dist_max_cl_) then
-    deleted(i)=.true.
-  endif
-enddo
 
 ! # of clumps to delete
 ! dNcl_m=count(deleted .eqv. .true.)
 
-! ! # of clumps to add
-cmltd_clump_ = cmltd_clump_ + dt_dyn * Ndot_
-dNcl_p = int ( cmltd_clump_ )
-cmltd_clump_ = cmltd_clump_ - dble(int(cmltd_clump_))
-if (cmltd_clump_>1.d0 .or. cmltd_clump_<0.d0) call crash('cmltd_clump_ can not be > 1 or < 0')
+! New total # of clumps
+! Ncl=Ncl+dNcl_p
+if (.not. present(is_init)) then ! by default, if not present, not initialization
+  ! ! # of clumps to add
+  cmltd_clump_ = cmltd_clump_ + dt_dyn * Ndot_
+  dNcl_p = int ( cmltd_clump_ )
+  cmltd_clump_ = cmltd_clump_ - dble(int(cmltd_clump_))
+  if (cmltd_clump_>1.d0 .or. cmltd_clump_<0.d0) call crash('cmltd_clump_ can not be > 1 or < 0')
+  call add_clumps(dNcl_p,Ncl,pos_cl,R_cl,dens_cl)
+endif
+
+allocate(deleted(Ncl))
+print*, maxval(pos_cl(:,1)), maxval(pos_cl(:,2)), maxval(pos_cl(:,3))
+
+call get_to_delete(Ncl,pos_cl,R_cl,deleted)
 
 call delete_clumps(deleted,Ncl,pos_cl,R_cl,dens_cl)
 
-! New total # of clumps
-! Ncl=Ncl+dNcl_p
-
-call add_clumps(dNcl_p,Ncl,pos_cl,R_cl,dens_cl)
+deallocate(deleted)
 
 end subroutine add_delete_clumps
 ! -----------------------------------------------------------------------------------
@@ -117,6 +117,7 @@ deallocate(pos_cl,R_cl,dens_cl)
 Ncl=Ncl-dNcl
 ! ... and reallocating them w/ the new size
 allocate(pos_cl(Ncl,3),R_cl(Ncl),dens_cl(Ncl))
+print*, maxval(pos_cl_tmp(:,1))
 
 j=1
 do i=1,Ncl+dNcl
@@ -127,7 +128,8 @@ do i=1,Ncl+dNcl
     j=j+1
   endif
 enddo
-
+print*, maxval(pos_cl(:,1)), maxval(pos_cl(:,2)), maxval(pos_cl(:,3)), dNcl
+stop
 if (j/=Ncl+1) call crash("Problem w/ the # of clumps being deleted")
 
 end subroutine delete_clumps
@@ -147,7 +149,6 @@ double precision, allocatable, intent(inout) :: pos_cl(:,:), R_cl(:), dens_cl(:)
 double precision :: pos_cl_tmp(Ncl,3), R_cl_tmp(Ncl), dens_cl_tmp(Ncl)
 integer :: i
 double precision :: th, ph
-logical :: rlvnt=.true.
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 ! Nothing to do
@@ -175,10 +176,6 @@ do i=Ncl-dNcl+1,Ncl
   pos_cl(i,1)=rini_
   ! Pick up @ random angular position (over dphi and d(cos(th)) )
   call get_flat(-1.d0,1.d0,th)
-  ! if (rlvnt_clumps_) then
-  !   call is_relevant(th,rlvnt)
-  !   if (.not. rlvnt) PICK UP NEW TH AND PH
-  ! endif
   call get_flat(0.d0,2.d0*dpi,ph)
   pos_cl(i,2)=dacos(th)
   pos_cl(i,3)=ph
@@ -227,6 +224,49 @@ do i=1,Ncl
 enddo
 
 end subroutine expand_clumps
+! -----------------------------------------------------------------------------------
+
+! -----------------------------------------------------------------------------------
+subroutine get_to_delete(Ncl,pos_cl,R_cl,deleted)
+use glbl_prmtrs
+use mod_cart_sph
+integer, intent(in) :: Ncl
+double precision, allocatable, intent(in) :: pos_cl(:,:), R_cl(:)
+logical, intent(out) :: deleted(Ncl)
+integer :: i
+double precision :: pos_cl_cart(Ncl,3)
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+deleted=.false.
+
+! Who should we delete?
+call sph_2_cart(Ncl,pos_cl,pos_cl_cart)
+print*, minval(pos_cl_cart(:,1)), maxval(pos_cl_cart(:,1))
+print*, minval(pos_cl_cart(:,2)), maxval(pos_cl_cart(:,2))
+print*, minval(pos_cl_cart(:,3)), maxval(pos_cl_cart(:,3))
+do i=1,Ncl
+  ! Those which get further than the maximal distance
+  if (pos_cl(i,1)>dist_max_cl_) then
+    deleted(i)=.true.
+  ! Those which go "behind" the superior conjunction of the X-ray source
+  ! elseif (pos_cl(i,1)*dcos(pos_cl(i,2))<-a_) then
+  elseif (pos_cl_cart(i,3)<-a_) then
+    deleted(i)=.true.
+  ! Those which are out of
+  ! the projected circle of radius
+  ! R = r_apoastron + max ( R_cl @ periastron, current Rcl )
+! elseif ( pos_cl_cart(i,1)**2.d0+pos_cl_cart(i,2)**2.d0 > &
+!     ( prjctd_apstrn_ + max(R_cl(i),R_cl_apstrn_) )**2.d0 ) then
+!     deleted(i)=.true.
+  elseif ( pos_cl_cart(i,1)>xmax_prjctd_ + max(R_cl(i),R_cl_apstrn_) .or. &
+           pos_cl_cart(i,1)<xmin_prjctd_ + max(R_cl(i),R_cl_apstrn_).or. &
+           pos_cl_cart(i,2)>ymax_prjctd_ + max(R_cl(i),R_cl_apstrn_).or. &
+           pos_cl_cart(i,2)<ymin_prjctd_ + max(R_cl(i),R_cl_apstrn_) ) then
+    deleted(i)=.true.
+  endif
+enddo
+
+end subroutine get_to_delete
 ! -----------------------------------------------------------------------------------
 
 ! -----------------------------------------------------------------------------------
@@ -402,9 +442,9 @@ call num_int_steps(100000,'one_over_v',1.d0,dist_max_cl_,Dt,'log')
 
 ! Beware, int of a very large double produces a negative integer...
 ! hence the if condition on the product and not on Ncl0_
-Ncl0_ = int ( Ndot_ * Dt )
 
 if (Ndot_ * Dt < 1.d9) then
+  Ncl0_ = int ( Ndot_ * Dt )
   write (string, "(I10)") Ncl0_
 else
   call crash('More than a billion clumps... are you sure you want to proceed?')
@@ -418,5 +458,64 @@ call followup("The # of clumps estimated in the simulation space is ~ "//trim(st
 
 end subroutine get_clump_number
 ! -----------------------------------------------------------------------------------
+
+! -----------------------------------------------------------------------------------
+! Compute the fraction < 1 of clumps to be plotted such as we have always ~
+! the same fraction of "dark" in the output image produced by positions_3D.py.
+! Here, we account only for the clumps w/ z > - rmax_plot (~ - orb. sep.).
+! -----------------------------------------------------------------------------------
+subroutine get_clumps_nbr_to_be_plotted
+use glbl_prmtrs
+use IO
+use miscellaneous
+use rdm
+double precision :: area, tot_area, al, integral_1, integral_2, f_cl_plot
+character(LEN=100) :: func_1, func_2, f_cl_plot_str, rmax_plot_str
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+! By default, we want area / rmax2 ~ 10%
+area = 0.1d0 * rmax_plot_**2.d0
+
+if (rad_evol_=='jon') then
+  al=1.d0
+  func_1='r2_over_v'
+  func_2='r2_over_v_arcsin'
+elseif (rad_evol_=='lorenzo') then
+  al=2.d0/3.d0
+  func_1='r2v_23_over_v'
+  func_2='r2v_23_over_v_arcsin'
+endif
+
+! Compute the 2 appropriate integrals
+call num_int_steps(100000,trim(func_1),Rstar_/rmax_plot_,1.d0                   ,integral_1,'log')
+call num_int_steps(100000,trim(func_2),1.d0             ,dist_max_cl_/rmax_plot_,integral_2,'log')
+
+! Compute tot_area, the area which would be occupied if we plotted all
+! the clumps.
+tot_area = dpi * (Ndot_*rmax_plot_/vinf_) * (clump_rad_/rmax_plot_)**2.d0 * &
+  (rmax_plot_/(2.d0*Rstar_))**(2.d0*al) * &
+  ( integral_1 + integral_2 )
+
+! Does not seem to work this thick/thin switch...
+! If optically thick
+! if (tot_area>area/rmax_plot_**2.d0) then
+!   tot_area=dsqrt(tot_area)
+  f_cl_plot = (area/rmax_plot_**2.d0) / tot_area
+! else ! opt. thin
+!   f_cl_plot = 1.d0
+! endif
+
+! Save in the log file the # of clumps to be plotted
+write(f_cl_plot_str,'(1pe12.4)') f_cl_plot
+write(rmax_plot_str,'(1pe12.4)') rmax_plot_
+
+call followup(' ')
+call followup('Fraction of clumps to be plotted '//trim(f_cl_plot_str))
+call followup('up to xmax = '//trim(rmax_plot_str))
+call followup(' ')
+
+end subroutine get_clumps_nbr_to_be_plotted
+! -----------------------------------------------------------------------------------
+
 
 end module mod_clumps

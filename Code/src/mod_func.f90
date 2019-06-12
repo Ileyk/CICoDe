@@ -13,6 +13,19 @@ end function v_wind
 ! -----------------------------------------------------------------------------------
 
 ! -----------------------------------------------------------------------------------
+! Same v_wind as above but w/ Rstar_ divided by rmax_plot_
+! as input parameter.
+! -----------------------------------------------------------------------------------
+function v_wind_prm (x)
+double precision :: v_wind_prm
+double precision, intent (in) :: x
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+v_wind_prm = (1.d0-(Rstar_/rmax_plot_)/x)**beta_
+return
+end function v_wind_prm
+! -----------------------------------------------------------------------------------
+
+! -----------------------------------------------------------------------------------
 function one_over_vr2 (x)
 double precision :: one_over_vr2
 double precision, intent (in) :: x
@@ -108,5 +121,51 @@ return
 end function mean_dist
 ! -----------------------------------------------------------------------------------
 
+
+! -----------------------------------------------------------------------------------
+function  r2_over_v(x)
+double precision :: r2_over_v, x_star
+double precision, intent (in) :: x
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+x_star=Rstar_/rmax_plot_
+r2_over_v = x**2.d0 / v_wind_prm(x)
+return
+end function r2_over_v
+! -----------------------------------------------------------------------------------
+
+! -----------------------------------------------------------------------------------
+function  r2_over_v_arcsin(x)
+use miscellaneous
+double precision :: r2_over_v_arcsin
+double precision, intent (in) :: x
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+if (x<1.d0) call crash('Function not defined on this range.')
+r2_over_v_arcsin = r2_over_v(x) * dsin(0.5d0*dasin(1.d0/x))**2.d0
+return
+end function r2_over_v_arcsin
+! -----------------------------------------------------------------------------------
+
+! -----------------------------------------------------------------------------------
+function  r2v_23_over_v(x)
+double precision :: r2v_23_over_v, x_star
+double precision, intent (in) :: x
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+x_star=Rstar_/rmax_plot_
+r2v_23_over_v = (v_wind_prm(x)/v_wind(2.d0))**(2.d0/3.d0) * (x**2.d0)**(2.d0/3.d0) / v_wind_prm (x)
+return
+end function r2v_23_over_v
+! -----------------------------------------------------------------------------------
+
+! -----------------------------------------------------------------------------------
+function  r2v_23_over_v_arcsin(x)
+use miscellaneous
+double precision :: r2v_23_over_v_arcsin
+double precision, intent (in) :: x
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+if (x<1.d0) call crash('Function not defined on this range.')
+r2v_23_over_v_arcsin = r2v_23_over_v(x) * dsin(0.5d0*dasin(1.d0/x))**2.d0
+return
+end function r2v_23_over_v_arcsin
+! -----------------------------------------------------------------------------------
 
 end module mod_func

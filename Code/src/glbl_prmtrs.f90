@@ -30,8 +30,14 @@ common beta_, a_, Mdot_, clump_mass_, clump_rad_
 double precision :: mass_fraction_, Rstar_, vinf_, time_max_, Per_, dist_max_cl_
 common mass_fraction_, Rstar_, vinf_, time_max_, Per_, dist_max_cl_
 
-double precision :: rini_, vini_, v2strrad_
-common rini_, vini_, v2strrad_, clump_dens_
+double precision :: rmax_plot_, inclnsn_, omega_i_
+common rmax_plot_, inclnsn_, omega_i_
+
+double precision :: rini_, vini_, v2strrad_, prjctd_apstrn_, R_cl_apstrn_
+common rini_, vini_, v2strrad_, clump_dens_, prjctd_apstrn_, R_cl_apstrn_
+
+double precision :: xmax_prjctd_, xmin_prjctd_, ymax_prjctd_, ymin_prjctd_
+common xmax_prjctd_, xmin_prjctd_, ymax_prjctd_, ymin_prjctd_
 
 double precision :: clump_dens_, dt_, t0_, t_
 common dt_, t0_, t_
@@ -47,9 +53,9 @@ double precision :: cmltd_clump_
 common cmltd_clump_
 
 character(len=400) :: prmtr_fl, err_fl, log_fl, out_fl, pos_fl, dis_fl, &
-  prsty_fl, NH_fl, posX_fl, fldr
+  prsty_fl, NH_fl, posX_fl, orb_fl, fldr
 common prmtr_fl, err_fl, log_fl, out_fl, pos_fl, dis_fl, &
-  prsty_fl, NH_fl, posX_fl, fldr
+  prsty_fl, NH_fl, posX_fl, orb_fl, fldr
 
 character(len=400) :: type_merge_, rad_evol_
 common type_merge_, rad_evol_
@@ -64,8 +70,8 @@ character(len=80), parameter :: chrono_0_mess='beginning', &
   chrono_4_mess='beginning (initialization)'
 
 
-logical :: deterministic_, rlvnt_clumps_, do_merge_
-common deterministic_, rlvnt_clumps_, do_merge_
+logical :: deterministic_, do_merge_, init_only_
+common deterministic_, do_merge_, init_only_
 
 integer :: Nphases_, Ncl0_, Nsave_, save_index_, restart_indx_
 common Nphases_, Ncl0_, Nsave_, save_index_, restart_indx_

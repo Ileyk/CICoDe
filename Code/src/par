@@ -1,6 +1,6 @@
 &savelist
   Nsave=100 ! how many snapshots per orbit do you want to save for plotting?
-  restart_indx=9
+  ! restart_indx=0
 /
 
 &endlist
@@ -14,14 +14,14 @@
 &wind
   beta=0.5d0
   vinf=1.d3 ! in km/s
-  Mdot=1.E-7 ! in solar mass per year
+  Mdot=1.E-10 ! in solar mass per year
 /
 
 &clumps
   ! Ncl0          = 1000 ! 00000 ! Initial # of clumps
   clump_mass    = 1.d18 ! in CGS
-  clump_rad     = 0.2d0 ! size @ 2 stellar radii, in stellar radii
-  mass_fraction = 1.d-2 ! fraction of the total mass trapped in the clumps
+  clump_rad     = 0.02d0 ! size @ 2 stellar radii, in stellar radii
+  mass_fraction = 1.d0 ! fraction of the total mass trapped in the clumps
   dist_max_cl   = 10.d0 ! distance from stellar center, in stellar radii, beyond which clumps are deleted
   do_merge      = F
   ! type_merge    = 'volume_x_2'
@@ -29,17 +29,17 @@
 /
 
 &orbit
-  a      = 1.8d0 ! in stellar radii units
-  Per    = 9.d0 ! in days
+  a      = 1.8d0 ! 2.4d0 ! in stellar radii units
+  Per    = 9.d0 ! 5.6d0 ! in days
   NSspin = 300.d0 ! in seconds
 /
 
 &LOS
-  inclnsn = 45.d0 ! in degrees, 90 is edge-on
-  omega_i = 0.d0 ! not defined for circular orbits
+  inclnsn = 87.d0 ! 27.d0 ! in degrees, 90 is edge-on
+  omega_i =  0.d0 ! not defined for circular orbits
 /
 
 &numerics
   deterministic=T
-  rlvnt_clumps =F
+  init_only    =F
 /

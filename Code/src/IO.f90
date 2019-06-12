@@ -36,7 +36,8 @@ subroutine read_par_files()
   integer :: Nsave, restart_indx
   double precision :: beta, a, Mdot, clump_mass, clump_rad
   double precision :: mass_fraction, Rstar, vinf, time_max, Per, dist_max_cl, NSspin
-  logical :: deterministic, rlvnt_clumps, do_merge
+  double precision :: rmax_plot, inclnsn, omega_i
+  logical :: deterministic, do_merge, init_only
   character(LEN=400) :: type_merge, rad_evol
 
   integer :: unitpar=9
@@ -55,7 +56,11 @@ subroutine read_par_files()
 
   namelist /orbit/ a, Per, NSspin
 
-  namelist /numerics/ deterministic, rlvnt_clumps
+  namelist /LOS/ inclnsn, omega_i
+
+  namelist /numerics/ deterministic, init_only
+
+  namelist /plot/ rmax_plot
 
   open(3,file=trim(err_fl))
 
@@ -83,8 +88,14 @@ subroutine read_par_files()
   Per = 9.d0
   NSspin = 300.d0
 
+  ! default is edge-on
+  inclnsn = 90.d0
+  omega_i =  0.0
+
+  rmax_plot = -1.d0
+
   deterministic = .true.
-  rlvnt_clumps  = .false.
+  init_only     = .false.
 
   print *, "Reading " // trim(prmtr_fl)
 
@@ -117,9 +128,15 @@ subroutine read_par_files()
        read(unitpar, orbit, end=106)
 
 106    rewind(unitpar)
-       read(unitpar, numerics, end=107)
+       read(unitpar, LOS, end=107)
 
-107  close(unitpar)
+107    rewind(unitpar)
+       read(unitpar, numerics, end=108)
+
+108    rewind(unitpar)
+       read(unitpar, plot, end=109)
+
+109  close(unitpar)
 
   ! DEPRECIATED : now, Ncl0 is computed based on Ndot_ and the time to cross the distance
   ! between rini_ and dist_max_cl_.
@@ -139,6 +156,24 @@ subroutine read_par_files()
     call crash('Why did you specify a type of merger?')
 
   if (Nsave>9999) call crash('Too many saved files')
+
+  if (init_only .and. restart_indx>-1) &
+    call crash('No restart possible if you want just the initialization.')
+
+  if (inclnsn<0.d0) &
+    call crash('Beware, inclination < 0 => initial time @ superior instead of inferior conjunction. Risky?')
+
+  ! default value
+  if (rmax_plot<0.d0) &
+    rmax_plot     = 1.2*a
+
+  if (rmax_plot<1.d0 .or. rmax_plot>dist_max_cl) &
+    call crash('Distance up to which plot w/ positions_3D.py too small or too large.')
+
+
+  ! Convert from degrees to radians
+  inclnsn = inclnsn * dpi/180.d0
+  omega_i = omega_i * dpi/180.d0
 
   Nsave_=Nsave
   restart_indx_=restart_indx
@@ -164,8 +199,13 @@ subroutine read_par_files()
   Per_    = Per
   NSspin_ = NSspin
 
+  inclnsn_ = inclnsn
+  omega_i_ = omega_i
+
   deterministic_=deterministic
-  rlvnt_clumps_ =rlvnt_clumps
+  init_only_    =init_only
+
+  rmax_plot_    = rmax_plot
 
 end subroutine read_par_files
 ! -----------------------------------------------------------------------------------
@@ -185,6 +225,7 @@ dis_fl=trim(fldr)//'initial_distributions'
 prsty_fl=trim(fldr)//'porosity'
 NH_fl=trim(fldr)//'NH'
 posX_fl=trim(fldr)//'posX'
+orb_fl=trim(fldr)//'orbit'
 
 log_fl=trim(fldr)//'log'
 ! scale_file=trim(fldr)//'scale'
@@ -206,20 +247,28 @@ err_fl=trim(fldr)//'err'
 ! the updated version of out, directuly used in dimensionizing.f90 in vualatv
 ! dim_file =trim(fldr)//'dim'  ! where you store the dimensioned computed quantities (but still in (GM2,roche1,L) units)
 
-if (restart_indx_<0) then
-  ! Since lines are appended in log_file each time (see in miscellaneous.f90),
-  ! we need to erase the previous one first
-  call system("rm -f "//log_fl)
-  ! et tant qu a faire...
-  call system("rm -f "//err_fl)
-  call system("rm -f "//pos_fl)
-  call system("rm -f "//dis_fl)
-  call system("rm -f "//prsty_fl)
-  call system("rm -f "//NH_fl)
-  call system("rm -f "//posX_fl)
-endif
-
 end subroutine give_filenames
+! -----------------------------------------------------------------------------------
+
+! -----------------------------------------------------------------------------------
+subroutine clean_outputs
+use glbl_prmtrs
+
+! Since lines are appended in log_file each time (see in miscellaneous.f90),
+! we need to erase the previous one first
+call system("rm -f "//log_fl)
+! et tant qu a faire...
+call system("rm -f "//err_fl)
+call system("rm -f "//pos_fl)
+call system("rm -f "//dis_fl)
+call system("rm -f "//prsty_fl)
+call system("rm -f "//NH_fl)
+call system("rm -f "//posX_fl)
+call system("rm -f "//orb_fl)
+
+call system("rm -f "//pos_fl//"_*.dat")
+
+end subroutine clean_outputs
 ! -----------------------------------------------------------------------------------
 
 ! -----------------------------------------------------------------------------------
@@ -268,11 +317,13 @@ end subroutine save_prsty_prfle
 ! -----------------------------------------------------------------------------------
 subroutine save_pos(Ncl,pos_cl,R_cl,dens_cl)
 use glbl_prmtrs
+use mod_dynamics_X
 integer, intent(in) :: Ncl
 double precision, intent(in) :: pos_cl(Ncl,3), R_cl(Ncl), dens_cl(Ncl)
 integer :: i
 logical :: file_exists
 character(LEN=80) :: filename
+double precision :: phase, pos_X(1:3)
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 write(filename,'(I4.4)') save_index_
@@ -281,8 +332,12 @@ filename = trim(pos_fl) // '_' // trim(filename) // '.dat'
 ! Write header
 ! Save time & # of clumps for restart
 open(unit=1,file=trim(filename))
-write(1,'(a)') 'x | y | z | R | rho'
 write(1,'((d20.14),(I10))') t_, Ncl
+write(1,'(a)') '(x,y,z) position of the X-ray source'
+phase=2.d0*dpi*(t_/Per_)
+call get_pos_X(phase,pos_X)
+write(1,'(200(e12.4))') (pos_X(i), i=1,3)
+write(1,'(a)') 'x | y | z | R | rho'
 close(1)
 
 ! INQUIRE(FILE=pos_fl, EXIST=file_exists)
@@ -339,8 +394,11 @@ endif
 ! Read time & # of clumps from header
 ! Save time & # of clumps for restart
 open(unit=1,file=trim(filename))
-read(1,*)
 read(1,'((d20.14),(I10))') t0_, Ncl
+! Skip header
+read(1,*)
+read(1,*)
+read(1,*)
 
 allocate(pos_cl(Ncl,3), R_cl(Ncl), dens_cl(Ncl))
 
@@ -433,7 +491,6 @@ if (restart_indx_>0 .and. dabs( t_ - dt_*(restart_indx_*(Nphases_/Nsave_)+1) ) <
   call system("rm output/tmp")
   ! print*,
   ! print*, dt_*restart_indx_*(Nphases_/Nsave_)
-
 endif
 
 open(unit=1,file=NH_fl,access='append')
@@ -472,6 +529,32 @@ close(1)
 end subroutine save_pos_X
 ! -----------------------------------------------------------------------------------
 
+! -----------------------------------------------------------------------------------
+subroutine save_orbit
+use glbl_prmtrs
+use mod_dynamics_X
+double precision :: phase, pos_X(1:3)
+integer :: i
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+! Header
+open(unit=1,file=orb_fl)
+write(1,'(a)') 'phase | x | y | z '
+close(1)
+
+open(unit=1,file=orb_fl)
+
+phase=0.
+do i=1,1000
+  call get_pos_X(phase,pos_X)
+  write(1,'(4(1pe12.4))') phase, pos_X(1), pos_X(2), pos_X(3)
+  phase=phase+2.d0*dpi/1000.d0
+enddo
+
+close(1)
+
+end subroutine save_orbit
+! -----------------------------------------------------------------------------------
 
 
 ! -----------------------------------------------------------------------------------

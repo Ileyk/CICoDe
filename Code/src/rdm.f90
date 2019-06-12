@@ -146,6 +146,10 @@ integer :: i
 double precision :: dx, x, q
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+if (xmax<xmin) then
+  call crash('Beware, reverted bounds in integration.')
+endif
+
 if (logsteps=='log' .and. (xmin<0.d0 .or. xmax<0.d0)) &
   call crash('No log spacing for numerical integration possible if negative values in range.')
 
@@ -153,6 +157,14 @@ if (which_func=='one_over_vr2') then
   f_ptr => one_over_vr2
 elseif (which_func=='one_over_v') then
   f_ptr => one_over_v
+elseif (which_func=='r2_over_v') then
+  f_ptr => r2_over_v
+elseif (which_func=='r2_over_v_arcsin') then
+  f_ptr => r2_over_v_arcsin
+elseif (which_func=='r2v_23_over_v') then
+  f_ptr => r2v_23_over_v
+  elseif (which_func=='r2v_23_over_v_arcsin') then
+    f_ptr => r2v_23_over_v_arcsin
 else
   call crash('Unknown function. Define it in mod_func.f90 first.')
 endif

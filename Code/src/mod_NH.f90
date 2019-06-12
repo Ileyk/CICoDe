@@ -17,8 +17,13 @@ double precision :: NH(Nphases_)
 double precision :: pos_X(3), phase, dphase, h
 double precision :: b2 ! impact parameter squared of clumps
 double precision :: bToStr ! impact parameter (squared) of the star
-integer :: i, k
+integer :: i, k, j_bin, N_bin
+double precision :: rrr(Ncl) !, NH_bin(int(dist_max_cl_*10.d0))
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+N_bin = int((dist_max_cl_/Rstar_)*10.d0)
+
+rrr(:)=pos_cl(:,1)
 
 ! Get the Cartesian positions of the clumps
 call sph_2_cart(Ncl,pos_cl,pos_cl_cart)
@@ -50,6 +55,17 @@ do k=1,Nphases_
       if (b2<R_cl(i)**2.d0) then
         h=dsqrt(R_cl(i)**2.d0-b2)
         NH(k)=NH(k)+h*dens_cl(i)
+        ! print*, k, rrr(i), dsqrt(b2), R_cl(i), h, minval(rrr), maxval(rrr)
+
+        ! radial shells logarithmically subdivided in 10*dist_max_cl_/R_star segments
+        ! (eg 100 for dist_max_cl_=10*R_star) from 1 to dist_max_cl_
+        j_bin = 1 + int( dlog(rrr(i)/1.d0) / ((dlog(dist_max_cl_/1.d0))/dble(dist_max_cl_*10.d0+0.00000001d0)) )
+        ! print*, j_bin, pos_cl(i,1), rrr(i), dist_max_cl_, dble(dist_max_cl_*10.d0)
+        ! if (j_bin<1 .or. j_bin>int(dist_max_cl_*10.d0)) then
+        !   print*, 'wtf', j_bin
+        !   stop
+        ! endif
+        ! NH_bin(j_bin)=NH_bin(j_bin)+h*dens_cl(i)
       endif
     endif
   enddo
@@ -61,6 +77,9 @@ do k=1,Nphases_
   ! w/ initial state (both have phase = 0).
   if (k==int(t_/dt_+smalldble)+1) then
     call save_pos_X(pos_X)
+    ! Compute the histogram of NH along the LOS (subdivided in log intervals)
+    ! to evaluate where we should stop the integration of NH
+    ! call save_NH_hist_LOS()
   endif
 
   phase=phase+dphase

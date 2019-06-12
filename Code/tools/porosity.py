@@ -67,7 +67,7 @@ r = np.zeros(Nr)
 d = np.zeros(Nr)
 Rcl = np.zeros(Nr)
 dd = np.zeros(Nr)
-fig, axes = plt.subplots(3,1, sharex=True,figsize=(3*figsize,3*figsize))
+fig, axes = plt.subplots(1,1, sharex=True,figsize=(1.5*figsize,figsize))
 for j in range(Nr):
     tmp = f.readline()
     r[j]   = float(tmp.split()[0])
@@ -75,24 +75,37 @@ for j in range(Nr):
     Rcl[j] = float(tmp.split()[2])
     dd[j]  = float(tmp.split()[3])
 
-axes[0].plot(r,d,color='r',linestyle='solid',linewidth=3)
-axes[1].plot(r,Rcl,color='g',linestyle='solid',linewidth=3)
-axes[2].plot(r,dd,color='b',linestyle='solid',linewidth=3)
+# ax1 = axes[0]
+ax2 = axes.twinx()
 
-axes[0].set_ylabel(r'mean dist. between centers / stellar radius', fontweight='bold', fontsize=fontsize)
-axes[1].set_ylabel(r'radii / stellar radius', fontweight='bold', fontsize=fontsize)
-axes[2].set_ylabel(r'mean dist. between shells / local clump radius', fontweight='bold', fontsize=fontsize)
+axes.plot(r,d,color='r',linestyle='solid',linewidth=3)
+axes.plot(r,Rcl,color='g',linestyle='solid',linewidth=3)
+ax2.plot(r,dd,color='b',linestyle='solid',linewidth=3)
 
-for i, ax in enumerate(axes.flat):
-    ax.grid(which='major', linestyle='dotted', linewidth=2, alpha=0.5)
-    ax.grid(which='minor', linestyle='dotted', linewidth=2, alpha=0.5)
-    ax.set_xlim(0.,np.max(r))
-    ax.set_xscale('log')
+# axes[0].plot(r,d,color='r',linestyle='solid',linewidth=3)
+# axes[1].plot(r,Rcl,color='g',linestyle='solid',linewidth=3)
+# axes[2].plot(r,dd,color='b',linestyle='solid',linewidth=3)
 
-axes[2].set_xlabel(r'x / stellar radius',fontweight='bold',fontsize=fontsize)
+# axes[0].set_ylabel(r'mean dist. between centers / stellar radius', fontweight='bold', fontsize=fontsize)
+# axes[1].set_ylabel(r'radii / stellar radius', fontweight='bold', fontsize=fontsize)
+# axes[2].set_ylabel(r'mean dist. between shells / local clump radius', fontweight='bold', fontsize=fontsize)
+
+# for i, ax in enumerate(axes.flat):
+axes.grid(which='major', linestyle='dotted', linewidth=2, alpha=0.5)
+axes.grid(which='minor', linestyle='dotted', linewidth=2, alpha=0.5)
+axes.set_xlabel(r'x / R${_*}$',fontweight='bold',fontsize=fontsize)
+axes.set_ylabel(r'clump radius / R${_*}$',fontweight='bold',fontsize=fontsize,color='g')
+plt.text(-0.18, 0.5, r'mean dist. between centers / R${_*}$',fontsize=fontsize,color='r',fontweight='bold',rotation=90,horizontalalignment='center',verticalalignment='center',transform = axes.transAxes)
+ax2.set_ylabel(r'mean dist. between shells / R${_*}$',fontweight='bold',fontsize=fontsize,color='b')
+
+ax2.tick_params(axis='y', labelcolor='b')
+
+# axes.set_xlim(0.,np.max(r))
+axes.set_xscale('log')
+
 # fig1.set_ylim(-10.,10.)
 # plt.show()
 # stop
 
 fig.tight_layout()
-plt.savefig('porosity.png',format='png',dpi=140,bbox_inches='tight') 
+plt.savefig('porosity.png',format='png',dpi=140,bbox_inches='tight')

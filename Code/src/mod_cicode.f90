@@ -11,6 +11,7 @@ use mod_NH
 integer :: Ncl
 double precision, allocatable :: pos_cl(:,:), R_cl(:), dens_cl(:)
 integer :: i
+character(LEN=200) :: string
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 call cpu_time(chrono_2)
@@ -43,7 +44,11 @@ else
 
 endif
 
+if (init_only_) call crash('Success, initialization finished.')
+
 call chrono(chrono_2,chrono_2_mess)
+
+print*, 'Initialization over - - - - - - - - - -'
 
 call cpu_time(chrono_3)
 
@@ -55,6 +60,8 @@ do while (t_<time_max_)
     call compute_NH(Ncl,pos_cl,R_cl,dens_cl)
     ! Is it time to save positions and instantaneous NH?
     if (int((t_+smalldble)/dt_)/(Nphases_/Nsave_)/=int((t_-smalldble)/dt_)/(Nphases_/Nsave_)) then
+      write(string,'((I6.6),(a),(I6.6))') int((t_+smalldble)/dt_)/(Nphases_/Nsave_), '/', Nsave_
+      call followup(string)
       call save_pos(Ncl,pos_cl,R_cl,dens_cl)
     endif
     t0_=t0_+dt_
@@ -82,7 +89,7 @@ double precision :: dt_dyn, r
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 call get_dt(Ncl,pos_cl,R_cl,dt_dyn)
-
+print*, 'kikou'
 call add_delete_clumps(dt_dyn,Ncl,pos_cl,R_cl,dens_cl)
 
 ! Save previous positions, to be used in expand_clumps
