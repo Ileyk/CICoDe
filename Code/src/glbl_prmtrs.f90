@@ -53,9 +53,9 @@ double precision :: cmltd_clump_
 common cmltd_clump_
 
 character(len=400) :: prmtr_fl, err_fl, log_fl, out_fl, pos_fl, dis_fl, &
-  prsty_fl, NH_fl, posX_fl, orb_fl, fldr
+  prsty_fl, NH_fl, NH_shells_fl, posX_fl, orb_fl, fldr
 common prmtr_fl, err_fl, log_fl, out_fl, pos_fl, dis_fl, &
-  prsty_fl, NH_fl, posX_fl, orb_fl, fldr
+  prsty_fl, NH_fl, NH_shells_fl, posX_fl, orb_fl, fldr
 
 character(len=400) :: type_merge_, rad_evol_
 common type_merge_, rad_evol_
@@ -70,8 +70,8 @@ character(len=80), parameter :: chrono_0_mess='beginning', &
   chrono_4_mess='beginning (initialization)'
 
 
-logical :: deterministic_, do_merge_, init_only_
-common deterministic_, do_merge_, init_only_
+logical :: deterministic_, do_merge_, init_only_, plot_cl_only_
+common deterministic_, do_merge_, init_only_, plot_cl_only_
 
 integer :: Nphases_, Ncl0_, Nsave_, save_index_, restart_indx_
 common Nphases_, Ncl0_, Nsave_, save_index_, restart_indx_

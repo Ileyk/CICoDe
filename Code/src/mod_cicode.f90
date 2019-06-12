@@ -30,17 +30,17 @@ if (restart_indx_<0) then ! if no restart
   ! delete immediately the unappropriate (ie never on LOS) clumps
   ! (but since is_init=.true., do not add any clump)
   call add_delete_clumps(0.d0,Ncl,pos_cl,R_cl,dens_cl,.true.)
-print*, 'clean'
+
   ! Save the initial spherical coordinates of the clumps, along with their radii
   call save_histograms(Ncl,pos_cl,R_cl)
-print*, 'saved 1'
+
   ! Save the initial Cartesian coordinates of the clumps, along with their radii
   call save_pos(Ncl,pos_cl,R_cl,dens_cl)
-print*, 'saved 2'
 
-  ! Compute the first NH, in initial position
-  call compute_NH(Ncl,pos_cl,R_cl,dens_cl)
-print*, 'saved 3'
+  ! Compute the first NH, in initial position.
+  ! Since is_init==.true., we will also compute the relative contribution
+  ! of each radial layer to NH, to justify where we set dist_max_cl_
+  call compute_NH(Ncl,pos_cl,R_cl,dens_cl,.true.)
 
 else
 
@@ -60,11 +60,11 @@ print*, 'Initialization over - - - - - - - - - -'
 call cpu_time(chrono_3)
 
 do while (t_<time_max_)
-print*, maxval(pos_cl(:,1)), Ncl
+
   call advance(Ncl,pos_cl,R_cl,dens_cl)
 
   if (t_==t0_+dt_) then
-    call compute_NH(Ncl,pos_cl,R_cl,dens_cl)
+    if (.not. plot_cl_only_) call compute_NH(Ncl,pos_cl,R_cl,dens_cl)
     ! Is it time to save positions and instantaneous NH?
     if (int((t_+smalldble)/dt_)/(Nphases_/Nsave_)/=int((t_-smalldble)/dt_)/(Nphases_/Nsave_)) then
       write(string,'((I6.6),(a),(I6.6))') int((t_+smalldble)/dt_)/(Nphases_/Nsave_), '/', Nsave_

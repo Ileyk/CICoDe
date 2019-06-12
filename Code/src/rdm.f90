@@ -94,7 +94,6 @@ fmax = one_over_v(rmin) / fnorm
 
 ! Pick up r between 1. and rmax and f between 0. and fmax
 do i=1,Ncl
-  print*, i, Ncl
   fr=0.d0
   ff=1.d0 ! just to make sure we enter in the first do loop
   do while (ff>fr)

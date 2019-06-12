@@ -20,9 +20,9 @@
 &clumps
   ! Ncl0          = 1000 ! 00000 ! Initial # of clumps
   clump_mass    = 1.d18 ! in CGS
-  clump_rad     = 0.02d0 ! size @ 2 stellar radii, in stellar radii
+  clump_rad     = 0.1d0 ! size @ 2 stellar radii, in stellar radii
   mass_fraction = 1.d0 ! fraction of the total mass trapped in the clumps
-  dist_max_cl   = 10.d0 ! distance from stellar center, in stellar radii, beyond which clumps are deleted
+  dist_max_cl   = 100.d0 ! distance from stellar center, in stellar radii, beyond which clumps are deleted
   do_merge      = F
   ! type_merge    = 'volume_x_2'
   rad_evol      = 'lorenzo'
@@ -40,6 +40,7 @@
 /
 
 &numerics
-  deterministic=T
-  init_only    =F
+  deterministic=F
+  init_only    =T
+  plot_cl_only =F
 /

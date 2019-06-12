@@ -37,7 +37,7 @@ subroutine read_par_files()
   double precision :: beta, a, Mdot, clump_mass, clump_rad
   double precision :: mass_fraction, Rstar, vinf, time_max, Per, dist_max_cl, NSspin
   double precision :: rmax_plot, inclnsn, omega_i
-  logical :: deterministic, do_merge, init_only
+  logical :: deterministic, do_merge, init_only, plot_cl_only
   character(LEN=400) :: type_merge, rad_evol
 
   integer :: unitpar=9
@@ -58,7 +58,7 @@ subroutine read_par_files()
 
   namelist /LOS/ inclnsn, omega_i
 
-  namelist /numerics/ deterministic, init_only
+  namelist /numerics/ deterministic, init_only, plot_cl_only
 
   namelist /plot/ rmax_plot
 
@@ -96,6 +96,10 @@ subroutine read_par_files()
 
   deterministic = .true.
   init_only     = .false.
+  ! Parameter to bypass the computation of NH and get only the
+  ! positions of "all" the clumps (=> do not delete those useless for NH).
+  ! To produce fancy animated GIF w/ positions_3D.py.
+  plot_cl_only  = .false.
 
   print *, "Reading " // trim(prmtr_fl)
 
@@ -204,6 +208,7 @@ subroutine read_par_files()
 
   deterministic_=deterministic
   init_only_    =init_only
+  plot_cl_only_ =plot_cl_only
 
   rmax_plot_    = rmax_plot
 
@@ -224,6 +229,7 @@ pos_fl=trim(fldr)//'positions'
 dis_fl=trim(fldr)//'initial_distributions'
 prsty_fl=trim(fldr)//'porosity'
 NH_fl=trim(fldr)//'NH'
+NH_shells_fl=trim(fldr)//'NH_shells'
 posX_fl=trim(fldr)//'posX'
 orb_fl=trim(fldr)//'orbit'
 
@@ -263,6 +269,7 @@ call system("rm -f "//pos_fl)
 call system("rm -f "//dis_fl)
 call system("rm -f "//prsty_fl)
 call system("rm -f "//NH_fl)
+call system("rm -f "//NH_shells_fl)
 call system("rm -f "//posX_fl)
 call system("rm -f "//orb_fl)
 
@@ -505,6 +512,37 @@ close(1)
 
 end subroutine save_NH
 ! -----------------------------------------------------------------------------------
+
+! -----------------------------------------------------------------------------------
+subroutine save_NH_shells(N_bin,NH_bin)
+use glbl_prmtrs
+integer, intent(in) :: N_bin
+double precision, intent(in) :: NH_bin(N_bin)
+double precision :: NH_cmltd
+integer :: i
+logical :: file_exists
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+INQUIRE(FILE=NH_shells_fl, EXIST=file_exists)
+if (.not. file_exists) then
+  open(unit=2,file=NH_shells_fl)
+  write(2,'(a)') 'r_center | r_left | r_right | NH | cumulated NH'
+  close(2)
+endif
+open(unit=2,file=NH_shells_fl,access='append')
+NH_cmltd=0.d0
+do i=1, N_bin
+  NH_cmltd=NH_cmltd+NH_bin(i)
+  write(2,'(200(1pe12.4))') Rstar_*(dist_max_cl_/Rstar_)**((dble(i-1)+0.5d0)/dble(N_bin)), &
+                            Rstar_*(dist_max_cl_/Rstar_)**(dble(i-1)        /dble(N_bin)), &
+                            Rstar_*(dist_max_cl_/Rstar_)**(dble(i  )        /dble(N_bin)), &
+                            NH_bin(i), NH_cmltd
+enddo
+close(2)
+
+end subroutine save_NH_shells
+! -----------------------------------------------------------------------------------
+
 
 ! -----------------------------------------------------------------------------------
 subroutine save_pos_X(pos_X)
