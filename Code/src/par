@@ -13,34 +13,33 @@
 
 &wind
   beta=0.5d0
-  vinf=1.d3 ! in km/s
-  Mdot=1.E-6 ! in solar mass per year
+  vinf=1.d3  ! in km/s
+  Mdot=1.E-8 ! in solar mass per year
 /
 
 &clumps
-  ! Ncl0          = 1000 ! 00000 ! Initial # of clumps
-  clump_mass    = 1.d18 ! in CGS
-  clump_rad     = 0.1d0 ! size @ 2 stellar radii, in stellar radii
-  mass_fraction = 1.d0 ! fraction of the total mass trapped in the clumps
-  dist_max_cl   = 100.d0 ! distance from stellar center, in stellar radii, beyond which clumps are deleted
+  clump_mass    = 1.d17  ! in CGS
+  clump_rad     = 0.05d0 ! size @ 2 stellar radii, in stellar radii
+  mass_fraction = 1.d0   ! fraction of the total mass trapped in the clumps
+  dist_max_cl   = 10.d0  ! distance from stellar center, in stellar radii, beyond which clumps are deleted
   do_merge      = F
   ! type_merge    = 'volume_x_2'
   rad_evol      = 'lorenzo'
 /
 
 &orbit
-  a      = 1.8d0 ! 2.4d0 ! in stellar radii units
-  Per    = 9.d0 ! 5.6d0 ! in days
+  a      = 2.4d0 ! 1.8d0 ! in stellar radii units
+  Per    = 5.6d0 ! 9.d0 ! in days
   NSspin = 300.d0 ! in seconds
 /
 
 &LOS
-  inclnsn = 87.d0 ! 27.d0 ! in degrees, 90 is edge-on
+  inclnsn = 27.d0 ! 87.d0 ! in degrees, 90 is edge-on
   omega_i =  0.d0 ! not defined for circular orbits
 /
 
 &numerics
-  deterministic=F
-  init_only    =T
+  deterministic=T
+  init_only    =F
   plot_cl_only =F
 /

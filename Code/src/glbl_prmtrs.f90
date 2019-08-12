@@ -53,9 +53,9 @@ double precision :: cmltd_clump_
 common cmltd_clump_
 
 character(len=400) :: prmtr_fl, err_fl, log_fl, out_fl, pos_fl, dis_fl, &
-  prsty_fl, NH_fl, NH_shells_fl, posX_fl, orb_fl, fldr
+  prsty_fl, NH_fl, NH_shells_fl, NH_smooth_fl, posX_fl, orb_fl, fldr
 common prmtr_fl, err_fl, log_fl, out_fl, pos_fl, dis_fl, &
-  prsty_fl, NH_fl, NH_shells_fl, posX_fl, orb_fl, fldr
+  prsty_fl, NH_fl, NH_shells_fl, NH_smooth_fl, posX_fl, orb_fl, fldr
 
 character(len=400) :: type_merge_, rad_evol_
 common type_merge_, rad_evol_

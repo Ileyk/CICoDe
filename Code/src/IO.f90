@@ -230,8 +230,10 @@ dis_fl=trim(fldr)//'initial_distributions'
 prsty_fl=trim(fldr)//'porosity'
 NH_fl=trim(fldr)//'NH'
 NH_shells_fl=trim(fldr)//'NH_shells'
+NH_smooth_fl=trim(fldr)//'NH_smooth'
 posX_fl=trim(fldr)//'posX'
 orb_fl=trim(fldr)//'orbit'
+norm_fl=trim(fldr)//'norm'
 
 log_fl=trim(fldr)//'log'
 ! scale_file=trim(fldr)//'scale'
@@ -270,6 +272,7 @@ call system("rm -f "//dis_fl)
 call system("rm -f "//prsty_fl)
 call system("rm -f "//NH_fl)
 call system("rm -f "//NH_shells_fl)
+call system("rm -f "//NH_smooth_fl)
 call system("rm -f "//posX_fl)
 call system("rm -f "//orb_fl)
 
@@ -541,6 +544,44 @@ enddo
 close(2)
 
 end subroutine save_NH_shells
+! -----------------------------------------------------------------------------------
+
+! -----------------------------------------------------------------------------------
+! Save the profile of NH as a function of orbital phase for a smooth wind.
+! Phases saved from 0 to 1.
+! -----------------------------------------------------------------------------------
+subroutine save_smooth_NH(phases,NH)
+use glbl_prmtrs
+double precision, intent(in) :: phases(Nphases_), NH(Nphases_)
+integer :: i
+logical :: file_exists
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+INQUIRE(FILE=NH_smooth_fl, EXIST=file_exists)
+if (.not. file_exists) then
+  open(unit=2,file=NH_smooth_fl)
+  write(2,'(a)') 'orb. phase | NH'
+  close(2)
+endif
+open(unit=2,file=NH_smooth_fl,access='append')
+do i=1, Nphases_
+  write(2,'(200(1pe12.4))') phases(i)/(2.d0*dpi), NH(i)
+enddo
+close(2)
+end subroutine save_smooth_NH
+! -----------------------------------------------------------------------------------
+
+! -----------------------------------------------------------------------------------
+subroutine save_normalization
+use glbl_prmtrs
+logical :: file_exists
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+open(unit=1,file=posX_fl)
+write(1,'(200(1pe12.4))') 'Speed     : ', vinf_
+write(1,'(200(1pe12.4))') 'Length    : ', Rstar_
+write(1,'(200(1pe12.4))') 'Mass rate : ', Mdot_
+close(1)
+end subroutine save_normalization
 ! -----------------------------------------------------------------------------------
 
 

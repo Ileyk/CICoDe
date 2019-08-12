@@ -244,7 +244,7 @@ do i=1,Ncl
   if (pos_cl(i,1)>dist_max_cl_) then
     deleted(i)=.true.
   ! Those which go "behind" the superior conjunction of the X-ray source
-  elseif (pos_cl(i,1)*dcos(pos_cl(i,2))<-a_) then
+elseif (pos_cl(i,1)*dcos(pos_cl(i,2))<-a_-R_cl(i)) then
     deleted(i)=.true.
   ! Those which are out of
   ! the projected circle of radius
@@ -253,9 +253,9 @@ do i=1,Ncl
 !     ( prjctd_apstrn_ + max(R_cl(i),R_cl_apstrn_) )**2.d0 ) then
 !     deleted(i)=.true.
   elseif ( pos_cl_cart(i,1)>xmax_prjctd_ + max(R_cl(i),R_cl_apstrn_) .or. &
-           pos_cl_cart(i,1)<xmin_prjctd_ + max(R_cl(i),R_cl_apstrn_).or. &
-           pos_cl_cart(i,2)>ymax_prjctd_ + max(R_cl(i),R_cl_apstrn_).or. &
-           pos_cl_cart(i,2)<ymin_prjctd_ + max(R_cl(i),R_cl_apstrn_) ) then
+           pos_cl_cart(i,1)<xmin_prjctd_ - max(R_cl(i),R_cl_apstrn_) .or. &
+           pos_cl_cart(i,2)>ymax_prjctd_ + max(R_cl(i),R_cl_apstrn_) .or. &
+           pos_cl_cart(i,2)<ymin_prjctd_ - max(R_cl(i),R_cl_apstrn_) ) then
     deleted(i)=.true.
   endif
 enddo

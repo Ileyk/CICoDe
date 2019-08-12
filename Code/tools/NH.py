@@ -135,7 +135,42 @@ log_fl='../src/output/log'
 proc = subprocess.Popen(['wc',NH_fl], stdout=subprocess.PIPE)
 tmp = proc.communicate()
 
-# 1. Read Nphases from log file (2600)
+# 0. Get normalization from saved normalization file
+norm_fl='../src/output/norm'
+f=open(norm_fl)
+tmp = f.read()
+tmp_split = tmp.split('\n')
+index = [i for i, s in enumerate(tmp_split) if 'Speed' in s]
+# in cm/s
+v0 = float(tmp_split[index[0]].split()[len(tmp_split[index[0]].split())-1])
+index = [i for i, s in enumerate(tmp_split) if 'Length' in s]
+# in cm
+L0 = float(tmp_split[index[0]].split()[len(tmp_split[index[0]].split())-1])
+index = [i for i, s in enumerate(tmp_split) if 'Mass rate' in s]
+# in solar masses per year
+Mdot0 = float(tmp_split[index[0]].split()[len(tmp_split[index[0]].split())-1])
+Mdot0 = Mdot0 * (msolar/secinyear)
+f.close()
+# Deduce the unit of NH0 = integral of ( particle number density x dl )
+mu = 0.5 # mean mass of particles in mH for fully ionized pure H plasma
+NH0 = Mdot0 / (L0*v0) / (mu*mH)
+
+# 1. Read the smooth NH profile computed for a uniform wind
+smooth_fl='../src/output/NH_smooth'
+proc = subprocess.Popen(['wc',smooth_fl], stdout=subprocess.PIPE)
+tmp = proc.communicate()
+Nlines = int(tmp[0].split()[0])-1
+phases_smooth = np.zeros(Nlines)
+NH_smooth = np.zeros(Nlines)
+f=open(smooth_fl)
+tmp = f.readline() # 1st header line
+for i in range(Nlines):
+    tmp = f.readline() # 1st header line
+    phases_smooth[i]=  float(tmp.split()[0])
+    NH_smooth[i]    =  float(tmp.split()[1])
+f.close()
+
+# 2. Read Nphases from log file (2600)
 f=open(log_fl)
 tmp = f.read()
 tmp_split = tmp.split('\n')
@@ -143,7 +178,7 @@ index = [i for i, s in enumerate(tmp_split) if 'The # of phase bins required is'
 Nphases = int(tmp_split[index[0]].split()[len(tmp_split[index[0]].split())-1])
 f.close()
 
-# 2. Read Nphases from 1st line of NH file (should be the same) (2600)
+# 3. Read Nphases from 1st line of NH file (should be the same) (2600)
 f=open(NH_fl)
 tmp = f.readline() # 1st header line
 if (Nphases!=int(tmp.split()[len(tmp.split())-1])):
@@ -153,7 +188,7 @@ if (Nphases!=int(tmp.split()[len(tmp.split())-1])):
 f.close()
 # Nphases = int(tmp.split()[len(tmp.split())-1])
 
-# 3. Read Nsave from log file (100)
+# 4. Read Nsave from log file (100)
 f=open(log_fl)
 tmp = f.read()
 tmp_split = tmp.split('\n')
@@ -161,7 +196,7 @@ index = [i for i, s in enumerate(tmp_split) if 'Among them, we save only' in s]
 Nsave = int(tmp_split[index[0]].split()[len(tmp_split[index[0]].split())-1])
 f.close()
 
-# 4. Check how many .dat files have already been produced.
+# 5. Check how many .dat files have already been produced.
 # Which is the index of the last saved file?
 # Look for how many data files produced by checking # of files
 # starting w/ positions_ and ending w/ .dat (includes 0000)
@@ -218,23 +253,27 @@ for j in range(3,Nph):
     # fig1.set_xlim(np.min(phases),np.max(phases))
     fig1.set_xlim(0,2.)
     # fig1.set_ylim(0.5*np.min(NH_median[np.where(NH_median>0.)]),2.*np.max(NH_median[np.where(NH_median<1E10)]))
-    fig1.set_ylim(0.0001,0.1)
+    fig1.set_ylim(NH0*0.01,NH0*1.)
     fig1.set_xlabel(r'Orbital phase',fontweight='bold',fontsize=fontsize)
-    fig1.set_ylabel(r'NH', fontweight='bold', fontsize=fontsize)
+    fig1.set_ylabel(r'NH (cm$^{-2}$)', fontweight='bold', fontsize=fontsize)
     # Plot instantaneous NH for X-ray source motion w/ ph=0 @ time = 0
-    fig1.plot(j*dNsave*dph,NH[dNsave*j,[dNsave*j]],marker='P',color='r',markersize=10)
+    fig1.plot(j*dNsave*dph,NH0*NH[dNsave*j,[dNsave*j]],marker='P',color='r',markersize=10)
 
-    fig1.step(phasesCC,NH_median,where='mid',label='mid',color='k')
-    fig1.step(phasesCC,NH_10,where='mid',label='mid',color='grey',alpha=0.3)
-    fig1.step(phasesCC,NH_30,where='mid',label='mid',color='grey')
-    fig1.step(phasesCC,NH_70,where='mid',label='mid',color='grey')
-    fig1.step(phasesCC,NH_90,where='mid',label='mid',color='grey',alpha=0.3)
+    fig1.step(phases_smooth,NH0*NH_smooth,where='mid',label='mid',color='g')
     # Repeat plot from 1 to 2, for better visualization
-    fig1.step(phasesCC+1.,NH_median,where='mid',label='mid',color='k')
-    fig1.step(phasesCC+1.,NH_10,where='mid',label='mid',color='grey',alpha=0.3)
-    fig1.step(phasesCC+1.,NH_30,where='mid',label='mid',color='grey')
-    fig1.step(phasesCC+1.,NH_70,where='mid',label='mid',color='grey')
-    fig1.step(phasesCC+1.,NH_90,where='mid',label='mid',color='grey',alpha=0.3)
+    fig1.step(phases_smooth+1.,NH0*NH_smooth,where='mid',label='mid',color='g')
+
+    fig1.step(phasesCC,NH0*NH_median,where='mid',label='mid',color='k')
+    fig1.step(phasesCC,NH0*NH_10,where='mid',label='mid',color='grey',alpha=0.3)
+    fig1.step(phasesCC,NH0*NH_30,where='mid',label='mid',color='grey')
+    fig1.step(phasesCC,NH0*NH_70,where='mid',label='mid',color='grey')
+    fig1.step(phasesCC,NH0*NH_90,where='mid',label='mid',color='grey',alpha=0.3)
+    # Repeat plot from 1 to 2, for better visualization
+    fig1.step(phasesCC+1.,NH0*NH_median,where='mid',label='mid',color='k')
+    fig1.step(phasesCC+1.,NH0*NH_10,where='mid',label='mid',color='grey',alpha=0.3)
+    fig1.step(phasesCC+1.,NH0*NH_30,where='mid',label='mid',color='grey')
+    fig1.step(phasesCC+1.,NH0*NH_70,where='mid',label='mid',color='grey')
+    fig1.step(phasesCC+1.,NH0*NH_90,where='mid',label='mid',color='grey',alpha=0.3)
     # fig1.step(phasesCC+1.,NH_median,where='mid',label='mid',color='b')
     fig1.set_yscale('log')
     fig1.grid(which='major', linestyle='dotted', linewidth=2, alpha=0.5)
@@ -250,187 +289,3 @@ for j in range(3,Nph):
     plt.close()
 
 imageio.mimsave('NH.gif',images,duration=15./float(Nph)) # duration per snapshot such as the whole GIF lasts 10s
-
-stop
-
-# hist, bins = np.histogram(NH[0],bins)
-# print NH[0]
-# print hist
-# print bins
-# print 'ok'
-# stop
-
-
-Nlines = int(tmp[0].split()[0]) /(+2) # +2 for 1 header line and 1 blank line
-
-
-# 1. Plot all the orbit - - - - - -
-
-orb_fl='../src/output/orbit'
-proc = subprocess.Popen(['wc',orb_fl], stdout=subprocess.PIPE)
-tmp = proc.communicate()
-Nphases = int(tmp[0].split()[0])-1
-phases = np.zeros(Nphases)
-pos_Xx = np.zeros(Nphases)
-pos_Xy = np.zeros(Nphases)
-pos_Xz = np.zeros(Nphases)
-f=open(orb_fl)
-tmp = f.readline() # 1st header line
-for i in range(Nphases):
-    tmp = f.readline()
-    phases[i]   =  float(tmp.split()[0])
-    pos_Xx[i]   =  float(tmp.split()[1])
-    pos_Xy[i]   =  float(tmp.split()[2])
-    pos_Xz[i]   =  float(tmp.split()[3])
-
-
-
-# 2. For each snapshot, plot... - - - - - -
-
-images = []
-
-# Max radius up to which we plot
-rmax=2.
-
-# Max number of clumps to be plotted
-Ncl_max=10000
-
-# 2.1 ... the instantaneous position of the X-ray source
-
-for i in range(Nfiles):
-
-    print i, '/', Nfiles
-
-    fig, fig1 = plt.subplots(1,sharex=True,figsize=(1.1*figsize,figsize))
-    fig1.set_xlim(-rmax,rmax)
-    fig1.set_ylim(-rmax,rmax)
-    fig1.set_xlabel(r'x / stellar radius',fontweight='bold',fontsize=fontsize)
-    fig1.set_ylabel(r'y / stellar radius', fontweight='bold', fontsize=fontsize)
-
-    # Plot the orbit - - -
-    # inferior part of the orbit
-    fig1.plot(pos_Xx[np.where(pos_Xz>0.)],pos_Xy[np.where(pos_Xz>0.)],color='g',linestyle='solid')
-    # superior part of the orbit (eclipse not plotted)...
-    # ... on the right of the star
-    fig1.plot(pos_Xx[np.where((pos_Xz<0.) & (np.sqrt(pos_Xx**2.+pos_Xy**2.)>1.) & (pos_Xx>0.)) ],pos_Xy[np.where((pos_Xz<0.) & (np.sqrt(pos_Xx**2.+pos_Xy**2.)>1.) & (pos_Xx>0.))],color='g',linestyle='dashed')
-    # ... on the left of the star
-    fig1.plot(pos_Xx[np.where((pos_Xz<0.) & (np.sqrt(pos_Xx**2.+pos_Xy**2.)>1.) & (pos_Xx<0.)) ],pos_Xy[np.where((pos_Xz<0.) & (np.sqrt(pos_Xx**2.+pos_Xy**2.)>1.) & (pos_Xx<0.))],color='g',linestyle='dashed')
-
-    pos_fl='../src/output/positions_'+str(i).zfill(4)+'.dat'
-    proc = subprocess.Popen(['wc',pos_fl], stdout=subprocess.PIPE)
-    tmp = proc.communicate()
-    Ncl = int(tmp[0].split()[0])-4
-    f=open(pos_fl)
-    tmp = f.readline() # 1st header line
-    tmp = f.readline() # 2nd header line
-    tmp = f.readline()
-    pos_Xx_inst=float(tmp.split()[0])
-    pos_Xy_inst=float(tmp.split()[1])
-    pos_Xz_inst=float(tmp.split()[2])
-    if (pos_Xz_inst>0.):
-        circl_CO = plt.Circle((pos_Xx_inst,pos_Xy_inst), 0.2, color='g', clip_on=False, alpha=0.8)
-    if (pos_Xz_inst<0.):
-        circl_CO = plt.Circle((pos_Xx_inst,pos_Xy_inst), 0.2, color='g', fill=False, clip_on=False, alpha=0.8)
-
-    circl_str = plt.Circle((0.,0.), 1., color='b', clip_on=False, alpha=0.5)
-    fig1.add_artist(circl_str)
-    # fig1.add_artist(circl_CO)
-    fig1.plot(pos_Xx_inst,pos_Xy_inst,color='k',linewidth=0,markersize=10,marker='P')
-
-    tmp = f.readline()
-    # Read the 10000 first clump positions
-    index=0
-    while (index<min(Ncl_max,Ncl)):
-        tmp = f.readline()
-        # If EOF, quit
-        if tmp == '':
-            break
-        xx   =  float(tmp.split()[0])
-        yy   =  float(tmp.split()[1])
-        # if outside plotting window, skip
-        if (np.abs(xx)>rmax or np.abs(yy)>rmax):
-            continue
-        Rcll =  float(tmp.split()[3])
-        circles(xx,yy,Rcll,c='k',alpha=0.5, edgecolor='none')
-        index = index + 1
-
-    fig1.set_xlabel(r'x / stellar radius',fontweight='bold',fontsize=fontsize)
-    fig1.set_ylabel(r'y / stellar radius', fontweight='bold', fontsize=fontsize)
-    plt.text(0.5, 1.04, str(index)+' in '+str(Ncl)+' clumps represented',fontsize=fontsize,color='k',fontweight='bold',horizontalalignment='center',verticalalignment='center',transform = fig1.transAxes)
-    plt.savefig('pif.png',format='png',dpi=140,bbox_inches='tight') # overwrite same file each time
-    images.append(imageio.imread('pif.png')) # but before, add this file to images
-
-    plt.close()
-
-imageio.mimsave('pif.gif',images,duration=15./float(Nfiles)) # duration per snapshot such as the whole GIF lasts 10s
-
-plt.show()
-stop
-
-# pos_fl='../src/output/positions'
-# proc = subprocess.Popen(['wc',pos_fl], stdout=subprocess.PIPE)
-# tmp = proc.communicate()
-# Nlines = int(tmp[0].split()[0])-2
-# f=open(pos_fl)
-# tmp = f.readline() # 1st header line
-# tmp = f.readline() # 2nd header line
-# Nphases = int(tmp.split()[1])
-# # Ncl     = int(tmp.split()[3])
-# # x = np.zeros(Ncl)
-# # y = np.zeros(Ncl)
-# # Rcl = np.zeros(Ncl)
-# # for j in range(Nphases):
-# # 	print j
-# # 	for i in range(Ncl):
-# # where the snapshot are stored before being bound together into a GIF
-# images = []
-# for j in range(Nphases):
-#     print j+1, '/', Nphases
-#     fig, fig1 = plt.subplots(1,sharex=True,figsize=(1.1*figsize,figsize))
-#     fig1.set_xlim(-10.,10.)
-#     fig1.set_ylim(-10.,10.)
-#     for i in range(Nlines):
-#         tmp = f.readline()
-#         if (tmp.split()[0]=='xxx'):
-#             break
-#     	# x[i]  = float(tmp.split()[0])
-#     	# y[i]  = float(tmp.split()[1])
-#     	# Rcl[i]  = float(tmp.split()[2])
-#         xx   =  float(tmp.split()[0])
-#         yy   =  float(tmp.split()[1])
-#         Rcll =  float(tmp.split()[3])
-#
-#         circles(xx,yy,Rcll,c='k',alpha=0.5, edgecolor='none')
-# 	# circles(x,y,Rcl,c='k',alpha=0.5, edgecolor='none')
-#     circle3 = plt.Circle((0.,0.), 1., color='b', clip_on=False, alpha=0.5)
-#     fig1.add_artist(circle3)
-#     fig.tight_layout()
-#     plt.savefig('pif.png',format='png',dpi=140,bbox_inches='tight') # overwrite same file each time
-#     # plt.show()
-#     images.append(imageio.imread('pif.png')) # but before, add this file to images
-#
-# imageio.mimsave('pif.gif',images,duration=15./float(Nphases)) # duration per snapshot such as the whole GIF lasts 10s
-
-	# plt.colorbar()
-	# Rcl_in_points = np.diff(fig1.transData.transform(zip([0]*len(Rcl), Rcl)))
-	# fig1.scatter(x,y,c='k',s=Rcl_in_points**2/30.,marker='o',edgecolors='none')
-
-	# fig1.plot(x,y,color='k',linewidth=0,markersize=1,marker='o')
-
-
-# fig1.plot(r,mach_parker,color='k')
-# fig1.plot(r,mach_beta[:,0],color='b',linestyle='solid')
-# fig1.plot(r,mach_beta[:,1],color='r',linestyle='solid')
-# fig1.plot(1,1,marker='o',color='k',markersize=10)
-# plt.text(0.96, 0.24, 'Isothermal assumption',fontsize=2*fontsize/3,color='k',fontweight='bold',rotation=-90,horizontalalignment='center',verticalalignment='center',transform = fig1.transAxes)
-# plt.text(0.5, 0.25, 'Isothermal Parker',fontsize=2*fontsize/3,color='k',fontweight='bold',horizontalalignment='center',verticalalignment='center',transform = fig1.transAxes)
-# plt.text(0.5, 0.15, r'C-rich, $\beta=$'+str(beta[0])+r' & v$_{inf}$/c$_s=$'+str(eta[0])+' \n => r$_s\sim$'+'{0:.2g}'.format(rs[0])+r'R$_{dust}$',fontsize=2*fontsize/3,color='b',fontweight='bold',horizontalalignment='center',verticalalignment='center',transform = fig1.transAxes)
-# plt.text(0.5, 0.05, r'O-rich, $\beta=$'+str(beta[1])+r' & v$_{inf}$/c$_s=$'+str(eta[1])+' \n => r$_s\sim$'+'{0:.2g}'.format(rs[1])+r'R$_{dust}$',fontsize=2*fontsize/3,color='r',fontweight='bold',horizontalalignment='center',verticalalignment='center',transform = fig1.transAxes)
-# fig1.grid(which='major', linestyle='dotted', linewidth=2, alpha=0.5)
-# fig1.grid(which='minor', linestyle='dotted', linewidth=2, alpha=0.5)
-# fig1.set_xlim(rmin,rmax)
-# fig1.set_ylim(0.,3.)
-# plt.show()
-# stop
-# fig.tight_layout()
-# fig.savefig(outputs+'difference_beta_law_Parker_wind.png',bbox_inches='tight')

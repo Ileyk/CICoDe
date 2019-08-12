@@ -7,7 +7,7 @@ contains
 ! the closest from us (inferior conjunction).
 ! z is along the LOS, with z increasing towards us.
 ! CHEAT
-! Works only for a circular edge-on orbit for now
+! Works only for a circular orbit for now
 ! Phase is the angular position (in radians)
 ! -----------------------------------------------------------------------------------
 subroutine get_pos_X(phase,pos_X)

@@ -169,6 +169,7 @@ tmp = f.read()
 tmp_split = tmp.split('\n')
 index = [i for i, s in enumerate(tmp_split) if 'Fraction of clumps to be plotted' in s]
 fcl_max = float(tmp_split[index[0]].split()[len(tmp_split[index[0]].split())-1])
+fcl_max = 1.
 index = [i for i, s in enumerate(tmp_split) if 'up to' in s]
 rmax = float(tmp_split[index[0]].split()[len(tmp_split[index[0]].split())-1])
 f.close()

@@ -14,6 +14,7 @@ use mod_wind
 use IO
 use mod_dynamics_X
 use mod_func
+use mod_NH
 ! speed @ 2 stellar radii, the reference point @ which
 ! clump_rad and clump_dens are given
 double precision :: v2strrad
@@ -38,6 +39,8 @@ NSspin_=NSspin_/(Rstar_/vinf_)
 
 ! if (time_max_/=1.d0) call crash('Pas certain encore que ça puisse se faire ça...')
 time_max_=time_max_*Per_
+
+call save_normalization
 
 Rstar_ = Rstar_ / Rstar_
 vinf_  = vinf_  / vinf_
@@ -134,12 +137,17 @@ do i=1,1000
   prjctd_apstrn_ = max(prjctd_apstrn_,dsqrt(pos_X(1)**2.d0+pos_X(2)**2.d0))
   phase=phase+2.d0*dpi/1000.d0
 enddo
+
 ! To make sure the clumps no longer touch the orbit
 if (rad_evol_=='lorenzo') then
   R_cl_apstrn_=lorenzo_rad(prjctd_apstrn_)
 elseif (rad_evol_=='jon') then
   R_cl_apstrn_=jon_rad(prjctd_apstrn_)
 endif
+
+! Compute the NH as a function of orbital phase for the corresponding
+! smooth wind w/ the same orbit, same Mdot and same beta-law
+call compute_smooth_NH
 
 end subroutine initialization
 ! -----------------------------------------------------------------------------------

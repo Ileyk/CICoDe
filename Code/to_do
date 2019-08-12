@@ -1,7 +1,5 @@
 # Physics
-* compute NH
 * how to account for clump size to determine whether they are relevant?
-* full 3D, no longer theta=2pi
 * distribution of clump sizes and masses
 * non-spherical clumps
 * non-radial trajectories
