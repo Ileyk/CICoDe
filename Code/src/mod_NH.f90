@@ -130,6 +130,7 @@ double precision :: l, dl, pos_X(3), dphase, q, r, rho, bToStr
 dphase=(2.d0*dpi/dble(Nphases_))
 phases(1)=0.d0 ! beware here, phases go from 0 to 2pi-dpi (no half-step, left aligned)
 do i=1,Nphases_
+  phases(i)=dble(i-1)*dphase
   call get_pos_X(phases(i),pos_X)
   ! We shift everything by +2 times the orbital separation to make sure the z of the CO
   ! is always >0 and that we can define a logarithmically stretched interval from the CO
@@ -142,7 +143,7 @@ do i=1,Nphases_
     bToStr = pos_X(1)**2.d0 + pos_X(2)**2.d0
     if (bToStr<Rstar_**2.d0) then
       NH(i)=bigdble
-      phases(i+1)=phases(i)+dphase
+      ! phases(i+1)=phases(i)+dphase
       cycle
     endif
   endif
@@ -155,12 +156,98 @@ do i=1,Nphases_
     l  = q*l
     dl = q*dl
   enddo
-  phases(i+1)=phases(i)+dphase
+  ! phases(i+1)=phases(i)+dphase
 enddo
 
 call save_smooth_NH(phases,NH)
 
 end subroutine compute_smooth_NH
+! -----------------------------------------------------------------------------------
+
+! -----------------------------------------------------------------------------------
+! Compute and save NH light curves for Nsave_NH_lc_ departure points
+! evenly spaced on the orbit.
+! Beware, pos_cl is in spherical!
+! -----------------------------------------------------------------------------------
+subroutine compute_NH_lc(Ncl,pos_cl,R_cl,dens_cl)
+use glbl_prmtrs
+use mod_dynamics_X
+use IO
+use mod_cart_sph
+use miscellaneous
+integer, intent(in) :: Ncl
+double precision, intent(in)  :: pos_cl(Ncl,3), R_cl(Ncl), dens_cl(Ncl)
+double precision :: pos_cl_cart(Ncl,3)
+double precision :: NH(Nsave_NH_lc_)
+double precision :: pos_X(3), phase, dphase, h
+double precision :: b2 ! impact parameter squared of clumps
+double precision :: bToStr ! impact parameter (squared) of the star
+integer :: i, k, j_bin, N_bin, kk
+character(LEN=100) :: NH_lc_fl_tmp
+double precision :: NH_smooth(Nphases_)
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+! Get the Cartesian positions of the clumps
+call sph_2_cart(Ncl,pos_cl,pos_cl_cart)
+
+NH=0.d0
+
+dphase=(2.d0*dpi/dble(Nsave_NH_lc_))
+phase=0.d0 ! beware here, phases go from 0 to 2pi-dpi (no half-step)
+
+! Read smooth NH to subtract it
+open(unit=2,file=trim(NH_smooth_fl))
+read(2,*) ! skip header
+do k=1,Nphases_
+  read(2,*) phase, NH_smooth(k) ! first read is dumb
+enddo
+close(2)
+
+do k=1,Nsave_NH_lc_
+
+  ! Initial phase + time elapsed since beginning
+  phase = dble(k-1)*dphase + 2.d0*dpi*(t_/Per_)
+  ! modulo 2pi
+  phase = mod(phase,2.d0*dpi)
+  ! Deduce the corresponding orbital bin index to subtract
+  ! NH smooth afterwhile
+  kk = 1+int((phase+smalldble)/(2.d0*dpi/dble(Nphases_)))
+
+  ! Where is the X-ray source @ this phase?
+  call get_pos_X(phase,pos_X)
+
+  ! Is it eclipsed?
+  if (0.d0>pos_X(3)) then
+    bToStr = pos_X(1)**2.d0 + pos_X(2)**2.d0
+    if (bToStr<Rstar_**2.d0) then
+      NH(k)=bigdble
+      goto 1
+    endif
+  endif
+
+  do i=1,Ncl
+    ! 1st condition : the clump is between the X-ray source and the observer
+    if (pos_cl_cart(i,3)>pos_X(3)) then
+      b2 = (pos_cl_cart(i,1)-pos_X(1))**2.d0 + (pos_cl_cart(i,2)-pos_X(2))**2.d0
+      ! 2nd condition : the impact parameter is smaller than the clump radius
+      if (b2<R_cl(i)**2.d0) then
+        h=2.d0*dsqrt(R_cl(i)**2.d0-b2) ! factor of 2 important here! Radius /= diameter!
+        NH(k)=NH(k)+h*dens_cl(i)
+      endif
+    endif
+  enddo
+
+  ! Append to each of the Nsave_NH_lc_ files the value of NH
+  ! for light curve w/ initial position k @ this time step
+1  write(NH_lc_fl_tmp,'((I3.3))') k
+  NH_lc_fl_tmp='output/NH_lc_'//trim(NH_lc_fl_tmp)
+  open(unit=1,file=trim(NH_lc_fl_tmp),access='append')
+  write(1,'(200(1pe12.4))') t_, phase, NH(k), NH_smooth(kk), (NH(k)-NH_smooth(kk))/NH_smooth(kk)
+  close(1)
+
+enddo
+
+end subroutine compute_NH_lc
 ! -----------------------------------------------------------------------------------
 
 

@@ -1,0 +1,12 @@
+ The # of clumps estimated in the simulation space is ~      16621
+  
+ Fraction of clumps to be plotted   3.3096E-03
+ up to xmax =   2.1600E+00
+  
+ The # of phase bins required is       2600
+ Among them, we save only        100
+  
+ It took     0.1 sec since beginning (initialization)                                                                                                                                                    
+ It took     0.3 sec since (initialization of clumps)                                                                                                                                                    
+ It took     5.9 sec since (integration & save)                                                                                                                                                          
+ It took     6.2 sec since beginning                                                                                                                                                                     

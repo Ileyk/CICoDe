@@ -147,9 +147,8 @@ index = [i for i, s in enumerate(tmp_split) if 'Length' in s]
 # in cm
 L0 = float(tmp_split[index[0]].split()[len(tmp_split[index[0]].split())-1])
 index = [i for i, s in enumerate(tmp_split) if 'Mass rate' in s]
-# in solar masses per year
+# (already in solar masses per year in norm file)
 Mdot0 = float(tmp_split[index[0]].split()[len(tmp_split[index[0]].split())-1])
-Mdot0 = Mdot0 * (msolar/secinyear)
 f.close()
 # Deduce the unit of NH0 = integral of ( particle number density x dl )
 mu = 0.5 # mean mass of particles in mH for fully ionized pure H plasma

@@ -39,8 +39,8 @@ common rini_, vini_, v2strrad_, clump_dens_, prjctd_apstrn_, R_cl_apstrn_
 double precision :: xmax_prjctd_, xmin_prjctd_, ymax_prjctd_, ymin_prjctd_
 common xmax_prjctd_, xmin_prjctd_, ymax_prjctd_, ymin_prjctd_
 
-double precision :: clump_dens_, dt_, t0_, t_
-common dt_, t0_, t_
+double precision :: clump_dens_, dt_, t0_, t_, dt_NH_lc_
+common dt_, t0_, t_, dt_NH_lc_
 
 double precision :: Ndot_, NSspin_
 common Ndot_, NSspin_
@@ -53,9 +53,11 @@ double precision :: cmltd_clump_
 common cmltd_clump_
 
 character(len=400) :: prmtr_fl, err_fl, log_fl, out_fl, pos_fl, dis_fl, &
-  prsty_fl, NH_fl, NH_shells_fl, NH_smooth_fl, posX_fl, orb_fl, fldr
+  prsty_fl, NH_fl, NH_shells_fl, NH_smooth_fl, posX_fl, orb_fl, &
+  norm_fl, fldr
 common prmtr_fl, err_fl, log_fl, out_fl, pos_fl, dis_fl, &
-  prsty_fl, NH_fl, NH_shells_fl, NH_smooth_fl, posX_fl, orb_fl, fldr
+  prsty_fl, NH_fl, NH_shells_fl, NH_smooth_fl, posX_fl, orb_fl, &
+  norm_fl, fldr
 
 character(len=400) :: type_merge_, rad_evol_
 common type_merge_, rad_evol_
@@ -70,11 +72,15 @@ character(len=80), parameter :: chrono_0_mess='beginning', &
   chrono_4_mess='beginning (initialization)'
 
 
-logical :: deterministic_, do_merge_, init_only_, plot_cl_only_
-common deterministic_, do_merge_, init_only_, plot_cl_only_
+logical :: deterministic_, do_merge_, init_only_, plot_cl_only_, &
+           NH_lc_only_
+common deterministic_, do_merge_, init_only_, plot_cl_only_, &
+       NH_lc_only_
 
-integer :: Nphases_, Ncl0_, Nsave_, save_index_, restart_indx_
-common Nphases_, Ncl0_, Nsave_, save_index_, restart_indx_
+integer :: Nphases_, Ncl0_, Nsave_, save_index_, restart_indx_, &
+  Nsave_NH_lc_
+common Nphases_, Ncl0_, Nsave_, save_index_, restart_indx_, &
+  Nsave_NH_lc_
 
 ! INTEGER, PARAMETER :: nshpe=4, nw=4
 ! INTEGER, PARAMETER :: fll_=1, eta_=fll_+1, q_=eta_+1, bet_=q_+1

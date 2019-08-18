@@ -63,16 +63,34 @@ do while (t_<time_max_)
 
   call advance(Ncl,pos_cl,R_cl,dens_cl)
 
+  ! Save the NH matrix and the clumps and X-ray source positions,
+  ! every dt_
+  ! print*, int(Per_/NSspin_)
+  ! print*, t_, dt_, Nphases_, Nsave_
   if (t_==t0_+dt_) then
-    if (.not. plot_cl_only_) call compute_NH(Ncl,pos_cl,R_cl,dens_cl)
-    ! Is it time to save positions and instantaneous NH?
-    if (int((t_+smalldble)/dt_)/(Nphases_/Nsave_)/=int((t_-smalldble)/dt_)/(Nphases_/Nsave_)) then
-      write(string,'((I6.6),(a),(I6.6))') int((t_+smalldble)/dt_)/(Nphases_/Nsave_), '/', Nsave_
-      call followup(string)
-      call save_pos(Ncl,pos_cl,R_cl,dens_cl)
+    print*, int((t_+smalldble)/dt_), '/', int((time_max_+smalldble)/dt_)
+    if (NH_lc_only_) then
+      call compute_NH_lc(Ncl,pos_cl,R_cl,dens_cl)
+    else
+      if (.not. plot_cl_only_) call compute_NH(Ncl,pos_cl,R_cl,dens_cl)
+      ! Is it time to save positions?
+      if (int((t_+smalldble)/dt_)/(Nphases_/Nsave_)/=int((t_-smalldble)/dt_)/(Nphases_/Nsave_)) then
+        write(string,'((I6.6),(a),(I6.6))') int((t_+smalldble)/dt_)/(Nphases_/Nsave_), '/', Nsave_
+        call followup(string)
+        call save_pos(Ncl,pos_cl,R_cl,dens_cl)
+      endif
     endif
     t0_=t0_+dt_
   endif
+
+  ! Save NH_lc_save NH light curves, each w/ a /= initial orbital phase,
+  ! every dt_NH_lc_, << dt_
+  ! (but NH_lc_save is also << Nphases_, typically ~ 10)
+  ! print*, t0_, dt_, dt_NH_lc_
+  ! if (t_==t0_+dt_NH_lc_) then
+  !   print*, int(t_/dt_NH_lc_)
+  !   ! call compute_NH(Ncl,pos_cl,R_cl,dens_cl)
+  ! endif
 
 enddo
 

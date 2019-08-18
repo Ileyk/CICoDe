@@ -89,17 +89,19 @@ call get_clumps_nbr_to_be_plotted
 ! Estimate of the # of phase bins required to have a time bin dt ~ to
 ! the NS spin period
 Nphases_ = int(Per_/NSspin_)
-! We take the closest (superior) multiple of 100
+! We take the closest (superior) multiple of Nsave_ (eg 100)
 ! so as we can save snapshots every N dt
 Nphases_ =  Nphases_ + Nsave_ - ( Nphases_ - Nsave_*int(dble(Nphases_)/dble(Nsave_)) )
-! We save ~ 100 snapshots per orbit for plotting the clumps and X-ray source
+! We save ~ Nsave snapshots per orbit for plotting the clumps and X-ray source
 ! positions and the instantaneous column density
 write(string,"(I10)") Nphases_
 call followup("The # of phase bins required is "//trim(string))
 write(string,"(I10)") Nsave_
 call followup("Among them, we save only "//trim(string))
 call followup(" ")
-dt_ = time_max_/dble(Nphases_)
+! Since we save ~ Nsave snapshots **per orbit**, we want Per_ here, not time_max_
+! dt_ = time_max_/dble(Nphases_)
+dt_ = Per_/dble(Nphases_)
 
 ! Deduce the radial profile of the mean distance between the clumps
 ! and save it, along with the radial profile of the clumps radii

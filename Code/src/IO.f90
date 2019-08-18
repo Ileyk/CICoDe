@@ -33,17 +33,18 @@ subroutine read_par_files()
   use miscellaneous
   ! use draw ! to determine position of L1
   use glbl_prmtrs
-  integer :: Nsave, restart_indx
+  integer :: Nsave, restart_indx, Nsave_NH_lc
   double precision :: beta, a, Mdot, clump_mass, clump_rad
-  double precision :: mass_fraction, Rstar, vinf, time_max, Per, dist_max_cl, NSspin
+  double precision :: mass_fraction, Rstar, vinf, time_max, Per, dist_max_cl, NSspin, &
+                      dt_NH_lc
   double precision :: rmax_plot, inclnsn, omega_i
-  logical :: deterministic, do_merge, init_only, plot_cl_only
+  logical :: deterministic, do_merge, init_only, plot_cl_only, NH_lc_only
   character(LEN=400) :: type_merge, rad_evol
 
   integer :: unitpar=9
   logical            :: file_exists
 
-  namelist /savelist/ Nsave, restart_indx
+  namelist /savelist/ Nsave, restart_indx, Nsave_NH_lc
 
   namelist /endlist/ time_max
 
@@ -54,11 +55,11 @@ subroutine read_par_files()
   namelist /clumps/ clump_mass, clump_rad, mass_fraction, dist_max_cl, &
     do_merge, type_merge, rad_evol
 
-  namelist /orbit/ a, Per, NSspin
+  namelist /orbit/ a, Per, NSspin, dt_NH_lc
 
   namelist /LOS/ inclnsn, omega_i
 
-  namelist /numerics/ deterministic, init_only, plot_cl_only
+  namelist /numerics/ deterministic, init_only, plot_cl_only, NH_lc_only
 
   namelist /plot/ rmax_plot
 
@@ -66,6 +67,7 @@ subroutine read_par_files()
 
   Nsave = 32
   restart_indx = -1 ! by default, no restart
+  Nsave_NH_lc = 3
 
   time_max = 1.d0
 
@@ -87,6 +89,7 @@ subroutine read_par_files()
   a = 1.8d0
   Per = 9.d0
   NSspin = 300.d0
+  dt_NH_lc = 1.d0
 
   ! default is edge-on
   inclnsn = 90.d0
@@ -100,6 +103,11 @@ subroutine read_par_files()
   ! positions of "all" the clumps (=> do not delete those useless for NH).
   ! To produce fancy animated GIF w/ positions_3D.py.
   plot_cl_only  = .false.
+  ! Parameter to compute NH as a function of time (not orbital phase)
+  ! for Nsave_NH_lc /= initial orbital phases (evenly spaced, ~10).
+  ! Enables to use a much smaller NSspin_ ie a much higher
+  ! time resolution.
+  NH_lc_only    = .false.
 
   print *, "Reading " // trim(prmtr_fl)
 
@@ -181,6 +189,7 @@ subroutine read_par_files()
 
   Nsave_=Nsave
   restart_indx_=restart_indx
+  Nsave_NH_lc_=Nsave_NH_lc
 
   time_max_=time_max
 
@@ -202,6 +211,7 @@ subroutine read_par_files()
   a_      = a
   Per_    = Per
   NSspin_ = NSspin
+  dt_NH_lc_ = dt_NH_lc
 
   inclnsn_ = inclnsn
   omega_i_ = omega_i
@@ -209,6 +219,7 @@ subroutine read_par_files()
   deterministic_=deterministic
   init_only_    =init_only
   plot_cl_only_ =plot_cl_only
+  NH_lc_only_   =NH_lc_only
 
   rmax_plot_    = rmax_plot
 
@@ -576,10 +587,10 @@ subroutine save_normalization
 use glbl_prmtrs
 logical :: file_exists
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-open(unit=1,file=posX_fl)
-write(1,'(200(1pe12.4))') 'Speed     : ', vinf_
-write(1,'(200(1pe12.4))') 'Length    : ', Rstar_
-write(1,'(200(1pe12.4))') 'Mass rate : ', Mdot_
+open(unit=1,file=norm_fl)
+write(1,'(a,200(1pe12.4))') 'Speed     : ', vinf_
+write(1,'(a,200(1pe12.4))') 'Length    : ', Rstar_
+write(1,'(a,200(1pe12.4))') 'Mass rate : ', Mdot_
 close(1)
 end subroutine save_normalization
 ! -----------------------------------------------------------------------------------
